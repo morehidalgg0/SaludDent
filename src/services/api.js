@@ -24,8 +24,15 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(accountData)
     });
-    const json = await res.json();
-    return json.data;
+    const text = await res.text();
+    try {
+      const json = JSON.parse(text);
+      if (!res.ok || !json.success) throw new Error(json.error || `Error ${res.status}`);
+      return json.data;
+    } catch (e) {
+      if (e.message.includes('Error')) throw e;
+      throw new Error(`Respuesta inesperada del servidor (${res.status}). Verificá que el backend esté corriendo.`);
+    }
   },
 
   // --- DOCTORS ---

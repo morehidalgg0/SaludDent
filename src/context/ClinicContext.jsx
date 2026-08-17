@@ -12,10 +12,14 @@ export function ClinicProvider({ children }) {
 
   const setIsRegistered = useCallback((value) => {
     setIsRegisteredState(value);
-    if (value) {
-      localStorage.setItem('saludconnect_registered', 'true');
-    } else {
-      localStorage.removeItem('saludconnect_registered');
+    try {
+      if (value) {
+        localStorage.setItem('saludconnect_registered', 'true');
+      } else {
+        localStorage.removeItem('saludconnect_registered');
+      }
+    } catch (e) {
+      console.warn('No se pudo acceder a localStorage:', e);
     }
   }, []);
 
