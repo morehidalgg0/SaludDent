@@ -11,14 +11,15 @@ import {
   Activity,
   Stethoscope,
   UserPlus,
-  CalendarPlus
+  CalendarPlus,
+  LogIn
 } from 'lucide-react';
 
 export function HomeView() {
-  const { isRegistered, setCurrentSection, openModal, doctors, patients, appointments, subscription, daySummary } = useClinic();
+  const { isLoggedIn, setCurrentSection, openModal, doctors, patients, appointments, subscription, daySummary } = useClinic();
 
-  // --- DASHBOARD VIEW (when registered) ---
-  if (isRegistered) {
+  // --- DASHBOARD VIEW (when logged in) ---
+  if (isLoggedIn) {
     return (
       <div className="space-y-6 py-2">
         
@@ -140,6 +141,14 @@ export function HomeView() {
           >
             <UserPlus className="w-4 h-4 text-emerald-400" />
             <span>Crear Cuenta / Registrar mi Clínica (14 días gratis)</span>
+          </button>
+
+          <button
+            onClick={() => openModal('loginModal')}
+            className="px-5 py-3 text-xs sm:text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all flex items-center gap-2"
+          >
+            <LogIn className="w-4 h-4 text-slate-500" />
+            <span>Iniciar Sesión</span>
           </button>
         </div>
 

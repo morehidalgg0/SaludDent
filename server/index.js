@@ -96,6 +96,22 @@ app.post('/api/auth/register-clinic', (req, res) => {
   }
 });
 
+app.post('/api/auth/login', (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email y contraseña son obligatorios.' });
+    }
+    const result = db.validateLogin(email, password);
+    if (!result.success) {
+      return res.status(401).json({ success: false, error: result.error });
+    }
+    res.json({ success: true, data: result.data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // --- DOCTORS / PROFESIONALES ---
 app.get('/api/doctors', (req, res) => {
   try {
@@ -207,6 +223,26 @@ app.delete('/api/patients/:id', (req, res) => {
     const deleted = db.deletePatient(req.params.id);
     if (!deleted) return res.status(404).json({ success: false, error: 'Paciente no encontrado' });
     res.json({ success: true, message: 'Paciente eliminado del fichero' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/patients/import', (req, res) => {
+  try {
+    const { patients } = req.body;
+    if (!Array.isArray(patients) || patients.length === 0) {
+      return res.status(400).json({ success: false, error: 'No se enviaron pacientes para importar.' });
+    }
+    if (patients.length > 1000) {
+      return res.status(400).json({ success: false, error: 'Máximo 1000 pacientes por importación.' });
+    }
+    const result = db.bulkCreatePatients(patients);
+    broadcastEvent('PATIENT_CREATED', { count: result.created }, {
+      title: 'Importación de Pacientes',
+      message: `Se importaron ${result.created} pacientes. ${result.skipped} saltados.`
+    });
+    res.json({ success: true, data: result });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

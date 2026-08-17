@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { seedDoctors, seedPatients, seedAppointments, seedMedicalRecords } from './seedData.js';
 
@@ -7,6 +8,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'clinic_database.json');
+
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(password).digest('hex');
+}
 
 // Ensure data folder exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -121,6 +126,27 @@ class Database {
     return this.data.clinic;
   }
 
+  validateLogin(email, password) {
+    const clinic = this.data.clinic;
+    if (!clinic.email || !clinic.passwordHash) {
+      return { success: false, error: 'No hay cuenta registrada. Creá una cuenta primero.' };
+    }
+    if (clinic.email.toLowerCase() !== email.toLowerCase()) {
+      return { success: false, error: 'Email incorrecto.' };
+    }
+    if (clinic.passwordHash !== hashPassword(password)) {
+      return { success: false, error: 'Contraseña incorrecta.' };
+    }
+    return {
+      success: true,
+      data: {
+        name: clinic.name,
+        adminName: clinic.adminName,
+        email: clinic.email
+      }
+    };
+  }
+
   updateClinic(clinicData) {
     this.data.clinic = { ...this.data.clinic, ...clinicData, updatedAt: new Date().toISOString() };
     this.persist();
@@ -136,6 +162,7 @@ class Database {
       name: clinicName || 'Nueva Clínica',
       adminName: adminName || 'Administrador',
       email: email || '',
+      passwordHash: password ? hashPassword(password) : '',
       phone: phone || '',
       address: 'Sede Principal',
       specialty: specialty || 'Policonsultorio',
@@ -256,6 +283,74 @@ class Database {
     this.data.patients.unshift(newPatient);
     this.persist();
     return newPatient;
+  }
+
+  bulkCreatePatients(patientsArray) {
+    const existingDnis = new Set(
+      this.data.patients.map(p => p.dni).filter(d => d)
+    );
+    const existingFicheros = new Set(
+      this.data.patients.map(p => p.ficheroNumber).filter(f => f)
+    );
+
+    let created = 0;
+    let skipped = 0;
+    const errors = [];
+
+    for (const patientData of patientsArray) {
+      const dni = (patientData.dni || '').replace(/\./g, '').trim();
+      const fichero = (patientData.ficheroNumber || '').trim();
+
+      if (!patientData.firstName || !patientData.lastName) {
+        errors.push({ row: patientData._row, error: 'Faltan nombre o apellido' });
+        skipped++;
+        continue;
+      }
+
+      if (dni && existingDnis.has(dni)) {
+        errors.push({ row: patientData._row, error: `DNI ${dni} ya existe` });
+        skipped++;
+        continue;
+      }
+
+      let ficheroNumber = fichero;
+      if (!ficheroNumber) {
+        ficheroNumber = `F-${this.data.ficheroSequence++}`;
+      } else if (existingFicheros.has(ficheroNumber)) {
+        errors.push({ row: patientData._row, error: `Fichero ${ficheroNumber} ya existe` });
+        skipped++;
+        continue;
+      }
+
+      const newPatient = {
+        id: `pat-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        ficheroNumber,
+        firstName: patientData.firstName || '',
+        lastName: patientData.lastName || '',
+        dni: patientData.dni || '',
+        phone: patientData.phone || '',
+        email: patientData.email || '',
+        birthDate: patientData.birthDate || '',
+        insurance: patientData.insurance || 'Particular',
+        insuranceNumber: patientData.insuranceNumber || '',
+        allergies: patientData.allergies || 'Ninguna referida',
+        bloodType: patientData.bloodType || 'Sin especificar',
+        emergencyContact: patientData.emergencyContact || '',
+        notes: patientData.notes || '',
+        createdAt: new Date().toISOString()
+      };
+
+      this.data.patients.unshift(newPatient);
+      if (dni) existingDnis.add(dni);
+      existingFicheros.add(ficheroNumber);
+      created++;
+    }
+
+    if (created > 0) {
+      this.persist();
+    }
+
+    return { created, skipped, errors };
   }
 
   updatePatient(id, patientData) {

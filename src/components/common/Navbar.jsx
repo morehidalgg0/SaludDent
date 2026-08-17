@@ -11,14 +11,17 @@ import {
   FileText,
   MessageSquare,
   Building2,
-  CreditCard
+  CreditCard,
+  LogIn,
+  LogOut
 } from 'lucide-react';
 
 export function Navbar() {
   const { 
     currentSection, 
     setCurrentSection, 
-    isRegistered,
+    isLoggedIn,
+    logout,
     isConnected, 
     patients, 
     openModal, 
@@ -64,7 +67,7 @@ export function Navbar() {
     { id: 'suscripcion', label: 'Planes & Suscripción', icon: CreditCard, badge: 'SaaS' }
   ];
 
-  const navTabs = isRegistered ? allNavTabs : allNavTabs.filter(t => t.id === 'home');
+  const navTabs = isLoggedIn ? allNavTabs : allNavTabs.filter(t => t.id === 'home');
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-2xs">
@@ -94,8 +97,8 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* Quick Global Patient Search - Only when registered */}
-          {isRegistered && (
+          {/* Quick Global Patient Search - Only when logged in */}
+          {isLoggedIn && (
           <div className="flex-1 max-w-sm relative" ref={searchRef}>
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -156,8 +159,8 @@ export function Navbar() {
           {/* Right Controls */}
           <div className="flex items-center gap-2">
             
-            {/* Create Clinic Account Button - Only when NOT registered */}
-            {!isRegistered && (
+            {/* Create Clinic Account Button - Only when NOT logged in */}
+            {!isLoggedIn && (
             <button
               onClick={() => openModal('registerClinicModal')}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition-colors"
@@ -168,8 +171,19 @@ export function Navbar() {
             </button>
             )}
 
-            {/* New Patient Button - Only when registered */}
-            {isRegistered && (
+            {/* Login Button - Only when NOT logged in */}
+            {!isLoggedIn && (
+            <button
+              onClick={() => openModal('loginModal')}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 transition-colors"
+            >
+              <LogIn className="w-3.5 h-3.5 text-slate-500" />
+              <span className="hidden md:inline">Iniciar Sesión</span>
+            </button>
+            )}
+
+            {/* New Patient Button - Only when logged in */}
+            {isLoggedIn && (
             <button
               onClick={() => openModal('newPatient', { patient: null })}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 transition-colors"
@@ -179,14 +193,26 @@ export function Navbar() {
             </button>
             )}
 
-            {/* Schedule Turn Button - Only when registered */}
-            {isRegistered && (
+            {/* Schedule Turn Button - Only when logged in */}
+            {isLoggedIn && (
             <button
               onClick={() => openModal('newAppointment', { prefill: { date: selectedDate } })}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-900 hover:bg-slate-800 text-white transition-colors"
             >
               <CalendarPlus className="w-3.5 h-3.5 text-emerald-400" />
               <span>Agendar Turno</span>
+            </button>
+            )}
+
+            {/* Logout Button - Only when logged in */}
+            {isLoggedIn && (
+            <button
+              onClick={logout}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+              title="Cerrar Sesión"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline">Salir</span>
             </button>
             )}
 

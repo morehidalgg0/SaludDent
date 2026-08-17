@@ -6,6 +6,7 @@ import { ToastContainer } from './components/common/ToastContainer.jsx';
 // Home Landing
 import { HomeView } from './components/home/HomeView.jsx';
 import { RegisterClinicModal } from './components/home/RegisterClinicModal.jsx';
+import { LoginModal } from './components/auth/LoginModal.jsx';
 
 // Agenda components
 import { AgendaViewHeader } from './components/agenda/AgendaViewHeader.jsx';
@@ -21,6 +22,7 @@ import { AppointmentDetailModal } from './components/agenda/AppointmentDetailMod
 import { FicheroView } from './components/fichero/FicheroView.jsx';
 import { NewPatientModal } from './components/fichero/NewPatientModal.jsx';
 import { PatientDetailModal } from './components/fichero/PatientDetailModal.jsx';
+import { ImportPatientsModal } from './components/fichero/ImportPatientsModal.jsx';
 
 // Doctors management
 import { NewDoctorModal } from './components/doctors/NewDoctorModal.jsx';
@@ -45,7 +47,7 @@ import { SubscriptionView } from './components/subscription/SubscriptionView.jsx
 import { PlanCheckoutModal } from './components/subscription/PlanCheckoutModal.jsx';
 
 function MainAppContent() {
-  const { currentSection, setCurrentSection, isRegistered, agendaView, isLoading } = useClinic();
+  const { currentSection, setCurrentSection, isLoggedIn, agendaView, isLoading } = useClinic();
 
   // Check if current URL is patient portal link (/portal/turno/:token)
   const pathname = window.location.pathname;
@@ -67,8 +69,8 @@ function MainAppContent() {
     );
   }
 
-  // Guard: if not registered, force home section
-  const activeSection = isRegistered ? currentSection : 'home';
+  // Guard: if not logged in, force home section
+  const activeSection = isLoggedIn ? currentSection : 'home';
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
@@ -145,8 +147,10 @@ function MainAppContent() {
       <AppointmentDetailModal />
       <NewPatientModal />
       <PatientDetailModal />
+      <ImportPatientsModal />
       <NewDoctorModal />
       <RegisterClinicModal />
+      <LoginModal />
       <WhatsAppSimulatorModal />
       <MedicalRecordEditorModal />
       <PrescriptionPrintModal />

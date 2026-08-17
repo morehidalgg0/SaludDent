@@ -35,6 +35,23 @@ export const api = {
     }
   },
 
+  async login(email, password) {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const text = await res.text();
+    try {
+      const json = JSON.parse(text);
+      if (!res.ok || !json.success) throw new Error(json.error || `Error ${res.status}`);
+      return json.data;
+    } catch (e) {
+      if (e.message.includes('Error')) throw e;
+      throw new Error(`Respuesta inesperada del servidor (${res.status}). Verificá que el backend esté corriendo.`);
+    }
+  },
+
   // --- DOCTORS ---
   async getDoctors() {
     const res = await fetch(`${API_BASE}/doctors`);
@@ -107,6 +124,17 @@ export const api = {
       method: 'DELETE'
     });
     return res.json();
+  },
+
+  async importPatients(patients) {
+    const res = await fetch(`${API_BASE}/patients/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ patients })
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) throw new Error(json.error || 'Error al importar pacientes');
+    return json.data;
   },
 
   // --- APPOINTMENTS ---

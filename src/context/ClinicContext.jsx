@@ -5,18 +5,18 @@ import { formatDateISO, getWeekDays, getBiweeklyDays, getMonthDays } from '../ut
 const ClinicContext = createContext();
 
 export function ClinicProvider({ children }) {
-  // Registration state (persisted in localStorage)
-  const [isRegistered, setIsRegisteredState] = useState(() => {
-    return localStorage.getItem('saludconnect_registered') === 'true';
+  // Auth state (persisted in localStorage)
+  const [isLoggedIn, setIsLoggedInState] = useState(() => {
+    return localStorage.getItem('saludconnect_loggedin') === 'true';
   });
 
-  const setIsRegistered = useCallback((value) => {
-    setIsRegisteredState(value);
+  const setIsLoggedIn = useCallback((value) => {
+    setIsLoggedInState(value);
     try {
       if (value) {
-        localStorage.setItem('saludconnect_registered', 'true');
+        localStorage.setItem('saludconnect_loggedin', 'true');
       } else {
-        localStorage.removeItem('saludconnect_registered');
+        localStorage.removeItem('saludconnect_loggedin');
       }
     } catch (e) {
       console.warn('No se pudo acceder a localStorage:', e);
@@ -60,7 +60,9 @@ export function ClinicProvider({ children }) {
     medicalRecordEditor: { isOpen: false, patient: null, doctor: null, record: null },
     prescriptionPrint: { isOpen: false, record: null, type: 'receta' },
     planCheckout: { isOpen: false, plan: null },
-    registerClinicModal: { isOpen: false }
+    registerClinicModal: { isOpen: false },
+    loginModal: { isOpen: false },
+    importPatients: { isOpen: false }
   });
 
   // Sound effect
@@ -300,7 +302,7 @@ export function ClinicProvider({ children }) {
   const registerClinicAccount = async (accountData) => {
     const res = await api.registerClinic(accountData);
     await Promise.all([loadClinic(), loadDoctors(), loadSubscription()]);
-    setIsRegistered(true);
+    setIsLoggedIn(true);
     setCurrentSection('agenda');
     addToast({
       type: 'success',
@@ -310,10 +312,23 @@ export function ClinicProvider({ children }) {
     return res;
   };
 
+  const login = async (email, password) => {
+    const res = await api.login(email, password);
+    await Promise.all([loadClinic(), loadDoctors(), loadPatients(), loadSubscription()]);
+    setIsLoggedIn(true);
+    setCurrentSection('agenda');
+    addToast({
+      type: 'success',
+      title: '¡Sesión Iniciada!',
+      message: `Bienvenido de vuelta, ${res.adminName || res.name}.`
+    });
+    return res;
+  };
+
   const logout = useCallback(() => {
-    setIsRegistered(false);
+    setIsLoggedIn(false);
     setCurrentSection('home');
-  }, [setIsRegistered]);
+  }, [setIsLoggedIn]);
 
   const createDoctor = async (doctorData) => {
     const newDoc = await api.createDoctor(doctorData);
@@ -363,6 +378,17 @@ export function ClinicProvider({ children }) {
     await api.deletePatient(id);
     await loadPatients();
     addToast({ type: 'info', title: 'Paciente Eliminado', message: 'Se eliminó la ficha del fichero.' });
+  };
+
+  const importPatients = async (patientsArray) => {
+    const result = await api.importPatients(patientsArray);
+    await loadPatients();
+    addToast({
+      type: 'success',
+      title: 'Importación Completada',
+      message: `Se importaron ${result.created} pacientes. ${result.skipped} saltados.`
+    });
+    return result;
   };
 
   const createAppointment = async (appointmentData) => {
@@ -440,8 +466,8 @@ export function ClinicProvider({ children }) {
     <ClinicContext.Provider value={{
       currentSection,
       setCurrentSection,
-      isRegistered,
-      setIsRegistered,
+      isLoggedIn,
+      login,
       logout,
       selectedDate,
       setSelectedDate,
@@ -481,6 +507,7 @@ export function ClinicProvider({ children }) {
       createPatient,
       updatePatient,
       deletePatient,
+      importPatients,
       createAppointment,
       updateAppointment,
       deleteAppointment,

@@ -5,7 +5,8 @@ import {
   Search, 
   UserPlus, 
   Filter, 
-  Folder
+  Folder,
+  FileSpreadsheet
 } from 'lucide-react';
 
 export function FicheroView() {
@@ -48,13 +49,22 @@ export function FicheroView() {
           </p>
         </div>
 
-        <button
-          onClick={() => openModal('newPatient', { patient: null })}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-lg transition-colors"
-        >
-          <UserPlus className="w-3.5 h-3.5 text-emerald-400" />
-          <span>+ Nuevo Paciente</span>
-        </button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button
+            onClick={() => openModal('importPatients')}
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg border border-slate-300 transition-colors"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-slate-500" />
+            <span>Importar</span>
+          </button>
+          <button
+            onClick={() => openModal('newPatient', { patient: null })}
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-lg transition-colors"
+          >
+            <UserPlus className="w-3.5 h-3.5 text-emerald-400" />
+            <span>+ Nuevo Paciente</span>
+          </button>
+        </div>
       </div>
 
       {/* Search and Filters Bar */}
