@@ -5,9 +5,23 @@ import { formatDateISO, getWeekDays, getBiweeklyDays, getMonthDays } from '../ut
 const ClinicContext = createContext();
 
 export function ClinicProvider({ children }) {
+  // Registration state (persisted in localStorage)
+  const [isRegistered, setIsRegisteredState] = useState(() => {
+    return localStorage.getItem('saludconnect_registered') === 'true';
+  });
+
+  const setIsRegistered = useCallback((value) => {
+    setIsRegisteredState(value);
+    if (value) {
+      localStorage.setItem('saludconnect_registered', 'true');
+    } else {
+      localStorage.removeItem('saludconnect_registered');
+    }
+  }, []);
+
   // Navigation & View States
   // 'home' | 'agenda' | 'fichero' | 'historias' | 'profesionales' | 'whatsapp' | 'espera' | 'suscripcion'
-  const [currentSection, setCurrentSection] = useState('home'); 
+  const [currentSection, setCurrentSection] = useState('home');
   const [selectedDate, setSelectedDate] = useState('2026-08-16'); // Anchor date matching seed data
   const [agendaView, setAgendaView] = useState('diaria'); // 'diaria' | 'semanal' | 'quincenal' | 'mensual'
   
@@ -282,6 +296,7 @@ export function ClinicProvider({ children }) {
   const registerClinicAccount = async (accountData) => {
     const res = await api.registerClinic(accountData);
     await Promise.all([loadClinic(), loadDoctors(), loadSubscription()]);
+    setIsRegistered(true);
     setCurrentSection('agenda');
     addToast({
       type: 'success',
@@ -290,6 +305,11 @@ export function ClinicProvider({ children }) {
     });
     return res;
   };
+
+  const logout = useCallback(() => {
+    setIsRegistered(false);
+    setCurrentSection('home');
+  }, [setIsRegistered]);
 
   const createDoctor = async (doctorData) => {
     const newDoc = await api.createDoctor(doctorData);
@@ -416,6 +436,9 @@ export function ClinicProvider({ children }) {
     <ClinicContext.Provider value={{
       currentSection,
       setCurrentSection,
+      isRegistered,
+      setIsRegistered,
+      logout,
       selectedDate,
       setSelectedDate,
       agendaView,

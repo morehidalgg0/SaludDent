@@ -18,6 +18,7 @@ export function Navbar() {
   const { 
     currentSection, 
     setCurrentSection, 
+    isRegistered,
     isConnected, 
     patients, 
     openModal, 
@@ -53,7 +54,7 @@ export function Navbar() {
     );
   }).slice(0, 6);
 
-  const navTabs = [
+  const allNavTabs = [
     { id: 'home', label: 'Inicio', icon: Home, count: null },
     { id: 'agenda', label: 'Agenda de Turnos', icon: Calendar, count: daySummary?.total || null },
     { id: 'fichero', label: 'Fichero de Pacientes', icon: Folder, count: null },
@@ -62,6 +63,8 @@ export function Navbar() {
     { id: 'espera', label: 'Sala de Espera', icon: Building2, count: null },
     { id: 'suscripcion', label: 'Planes & Suscripción', icon: CreditCard, badge: 'SaaS' }
   ];
+
+  const navTabs = isRegistered ? allNavTabs : allNavTabs.filter(t => t.id === 'home');
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-2xs">
@@ -91,7 +94,8 @@ export function Navbar() {
             </div>
           </div>
 
-          {/* Quick Global Patient Search */}
+          {/* Quick Global Patient Search - Only when registered */}
+          {isRegistered && (
           <div className="flex-1 max-w-sm relative" ref={searchRef}>
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -147,11 +151,13 @@ export function Navbar() {
               </div>
             )}
           </div>
+          )}
 
           {/* Right Controls */}
           <div className="flex items-center gap-2">
             
-            {/* Create Clinic Account Button */}
+            {/* Create Clinic Account Button - Only when NOT registered */}
+            {!isRegistered && (
             <button
               onClick={() => openModal('registerClinicModal')}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition-colors"
@@ -160,8 +166,10 @@ export function Navbar() {
               <Building2 className="w-3.5 h-3.5 text-emerald-700" />
               <span className="hidden md:inline">Registrar Clínica</span>
             </button>
+            )}
 
-            {/* New Patient Button */}
+            {/* New Patient Button - Only when registered */}
+            {isRegistered && (
             <button
               onClick={() => openModal('newPatient', { patient: null })}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 transition-colors"
@@ -169,8 +177,10 @@ export function Navbar() {
               <UserPlus className="w-3.5 h-3.5 text-slate-500" />
               <span className="hidden sm:inline">Nuevo Paciente</span>
             </button>
+            )}
 
-            {/* Schedule Turn Button */}
+            {/* Schedule Turn Button - Only when registered */}
+            {isRegistered && (
             <button
               onClick={() => openModal('newAppointment', { prefill: { date: selectedDate } })}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-900 hover:bg-slate-800 text-white transition-colors"
@@ -178,6 +188,7 @@ export function Navbar() {
               <CalendarPlus className="w-3.5 h-3.5 text-emerald-400" />
               <span>Agendar Turno</span>
             </button>
+            )}
 
           </div>
 

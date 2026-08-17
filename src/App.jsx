@@ -45,7 +45,7 @@ import { SubscriptionView } from './components/subscription/SubscriptionView.jsx
 import { PlanCheckoutModal } from './components/subscription/PlanCheckoutModal.jsx';
 
 function MainAppContent() {
-  const { currentSection, agendaView, isLoading } = useClinic();
+  const { currentSection, setCurrentSection, isRegistered, agendaView, isLoading } = useClinic();
 
   // Check if current URL is patient portal link (/portal/turno/:token)
   const pathname = window.location.pathname;
@@ -67,6 +67,9 @@ function MainAppContent() {
     );
   }
 
+  // Guard: if not registered, force home section
+  const activeSection = isRegistered ? currentSection : 'home';
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
       
@@ -77,14 +80,14 @@ function MainAppContent() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-4 sm:py-6">
         
         {/* SECTION: HOME / LANDING PAGE */}
-        {currentSection === 'home' && (
+        {activeSection === 'home' && (
           <div className="animate-in fade-in duration-150">
             <HomeView />
           </div>
         )}
 
         {/* SECTION: AGENDA MULTIVISTA */}
-        {currentSection === 'agenda' && (
+        {activeSection === 'agenda' && (
           <div className="space-y-3.5 animate-in fade-in duration-150">
             {/* Header: Solapa de Vista, Fecha y Filtro de Profesional */}
             <AgendaViewHeader />
@@ -101,35 +104,35 @@ function MainAppContent() {
         )}
 
         {/* SECTION: FICHERO DE PACIENTES */}
-        {currentSection === 'fichero' && (
+        {activeSection === 'fichero' && (
           <div className="animate-in fade-in duration-150">
             <FicheroView />
           </div>
         )}
 
         {/* SECTION: HISTORIAS CLÍNICAS (EHR) */}
-        {currentSection === 'historias' && (
+        {activeSection === 'historias' && (
           <div className="animate-in fade-in duration-150">
             <MedicalRecordsView />
           </div>
         )}
 
         {/* SECTION: NOTIFICACIONES WHATSAPP */}
-        {currentSection === 'whatsapp' && (
+        {activeSection === 'whatsapp' && (
           <div className="animate-in fade-in duration-150">
             <WhatsAppHubView />
           </div>
         )}
 
         {/* SECTION: SALA DE ESPERA */}
-        {currentSection === 'espera' && (
+        {activeSection === 'espera' && (
           <div className="animate-in fade-in duration-150">
             <WaitingRoomView />
           </div>
         )}
 
         {/* SECTION: PLANES & SUSCRIPCIÓN SAAS */}
-        {currentSection === 'suscripcion' && (
+        {activeSection === 'suscripcion' && (
           <div className="animate-in fade-in duration-150">
             <SubscriptionView />
           </div>
