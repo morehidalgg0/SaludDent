@@ -35,3 +35,11 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
+
+/src/generated/prisma
+
+# Server data (legacy JSON database)
+server/data/
+
+# Prisma
+prisma/migrations/

@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Clinic {
+  id          String   @id @default(cuid())
+  name        String
+  adminName   String
+  email       String   @unique
+  passwordHash String
+  phone       String
+  address     String   @default("Sede Principal")
+  specialty   String   @default("Policonsultorio")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  doctor      Doctor[]
+  patient     Patient[]
+  appointment Appointment[]
+  medicalRecord MedicalRecord[]
+  whatsappLog WhatsAppLog[]
+  subscription Subscription?
+
+  @@map("clinic")
+}
+
+model Doctor {
+  id              String   @id @default(cuid())
+  name            String
+  specialty       String
+  specialtySlug   String
+  license         String   @default("")
+  phone           String   @default("")
+  email           String   @default("")
+  color           String   @default("#0d9488")
+  room            String   @default("")
+  intervalMinutes Int      @default(15)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  clinicId String
+  clinic   Clinic @relation(fields: [clinicId], references: [id])
+
+  appointment    Appointment[]
+  medicalRecord  MedicalRecord[]
+
+  @@map("doctor")
+}
+
+model Patient {
+  id              String   @id @default(cuid())
+  ficheroNumber   String   @unique
+  firstName       String
+  lastName        String
+  dni             String   @unique
+  phone           String   @default("")
+  email           String   @default("")
+  birthDate       String   @default("")
+  insurance       String   @default("Particular")
+  insuranceNumber String   @default("")
+  allergies       String   @default("Ninguna referida")
+  bloodType       String   @default("Sin especificar")
+  emergencyContact String  @default("")
+  notes           String   @default("")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  clinicId String
+  clinic   Clinic @relation(fields: [clinicId], references: [id])
+
+  appointment    Appointment[]
+  medicalRecord  MedicalRecord[]
+
+  @@map("patient")
+}
+
+model Appointment {
+  id                String   @id @default(cuid())
+  date              String
+  time              String
+  durationMinutes   Int      @default(15)
+  status            String   @default("pending")
+  type              String   @default("consultation")
+  isOverturn        Boolean  @default(false)
+  confirmationToken String   @unique
+  notes             String   @default("")
+
+  // Denormalized patient info (for quick display)
+  patientName       String   @default("Paciente sin registrar")
+  patientPhone      String   @default("")
+  ficheroNumber     String   @default("S/F")
+
+  // Denormalized doctor info
+  doctorName        String
+  specialty         String
+
+  whatsappStatus    String   @default("not_sent")
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  clinicId   String
+  clinic     Clinic   @relation(fields: [clinicId], references: [id])
+  doctorId   String
+  doctor     Doctor   @relation(fields: [doctorId], references: [id])
+  patientId  String?
+  patient    Patient? @relation(fields: [patientId], references: [id])
+
+  @@map("appointment")
+}
+
+model MedicalRecord {
+  id             String   @id @default(cuid())
+  date           String
+  reason         String   @default("Consulta médica")
+  specialty      String
+  specialtySlug  String
+  anamnesis      String   @default("")
+  diagnosis      String   @default("")
+  treatmentPlan  String   @default("")
+
+  // JSON fields
+  vitalSigns     Json     @default("{}")
+  specialtyData  Json     @default("{}")
+  prescriptions  Json     @default("[]")
+  attachments    Json     @default("[]")
+
+  doctorName     String   @default("Profesional Médico")
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  clinicId   String
+  clinic     Clinic   @relation(fields: [clinicId], references: [id])
+  patientId  String
+  patient    Patient  @relation(fields: [patientId], references: [id])
+  doctorId   String
+  doctor     Doctor   @relation(fields: [doctorId], references: [id])
+
+  @@map("medical_record")
+}
+
+model WhatsAppLog {
+  id           String   @id @default(cuid())
+  type         String
+  appointmentId String  @default("")
+  patientName  String   @default("")
+  phone        String   @default("")
+  message      String   @default("")
+  status       String   @default("sent")
+  timestamp    DateTime @default(now())
+
+  clinicId String
+  clinic   Clinic @relation(fields: [clinicId], references: [id])
+
+  @@map("whatsapp_log")
+}
+
+model Subscription {
+  id              String   @id @default(cuid())
+  planId          String   @default("professional")
+  planName        String   @default("Plan Profesional (Hasta 5 Médicos)")
+  price           Int      @default(29000)
+  currency        String   @default("ARS")
+  status          String   @default("active")
+  billingCycle    String   @default("monthly")
+  startDate       String   @default("")
+  nextBillingDate String   @default("")
+  autoRenew       Boolean  @default(true)
+
+  // JSON fields
+  paymentMethod   Json     @default("{}")
+  limits          Json     @default("{}")
+  invoices        Json     @default("[]")
+
+  clinicId String   @unique
+  clinic   Clinic   @relation(fields: [clinicId], references: [id])
+
+  @@map("subscription")
+}

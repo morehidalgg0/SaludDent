@@ -9,15 +9,27 @@
     "dev:all": "concurrently \"node server/index.js\" \"vite\"",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "postinstall": "prisma generate",
+    "vercel-build": "prisma generate && prisma migrate deploy && npm run build",
+    "db:seed": "node prisma/seed.js",
+    "db:push": "npx prisma db push",
+    "db:migrate": "npx prisma migrate dev"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "@prisma/adapter-pg": "^7.9.1",
+    "@prisma/client": "^7.9.1",
     "clsx": "^2.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "lucide-react": "^0.428.0",
     "papaparse": "^5.6.0",
+    "prisma": "^7.9.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^2.5.2",
