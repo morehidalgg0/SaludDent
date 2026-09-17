@@ -403,6 +403,17 @@ function mapLegacyStatus(rawStatus) {
   return { status: 'pending', whatsappStatus: 'not_sent' };
 }
 
+// A "confirmed"/"reminder sent" status from the old system doesn't mean much here — this
+// system hasn't sent its own WhatsApp reminder yet, so any confirmation from before would
+// be misleading. Only appointments happening today keep their real imported status;
+// everything else resets to pending/not_sent so it goes through the new reminder flow.
+// Cancellations are the one exception that always carries over regardless of date.
+function resolveImportedStatus(rawStatus, date, today) {
+  const mapped = mapLegacyStatus(rawStatus);
+  if (mapped.status === 'cancelled' || date === today) return mapped;
+  return { status: 'pending', whatsappStatus: 'not_sent' };
+}
+
 function diffMinutes(startHHMMSS, endHHMMSS) {
   const toMin = (t) => { const [h, m] = (t || '').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
   const diff = toMin(endHHMMSS) - toMin(startHHMMSS);
@@ -422,6 +433,7 @@ export async function bulkCreateAppointments(rows) {
   const patientByDni = new Map(patients.filter(p => p.dni).map(p => [p.dni, p]));
   const patientByName = new Map(patients.map(p => [`${p.firstName} ${p.lastName}`.toLowerCase().trim(), p]));
   const doctorByName = new Map(doctors.map(d => [d.name.toLowerCase().trim(), d]));
+  const today = new Date().toISOString().split('T')[0];
 
   let created = 0;
   let skipped = 0;
@@ -454,7 +466,7 @@ export async function bulkCreateAppointments(rows) {
       return;
     }
 
-    const { status, whatsappStatus } = mapLegacyStatus(row.status);
+    const { status, whatsappStatus } = resolveImportedStatus(row.status, row.date, today);
 
     toCreate.push({
       date: row.date,
