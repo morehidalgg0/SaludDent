@@ -30,6 +30,7 @@ import { NewDoctorModal } from './components/doctors/NewDoctorModal.jsx';
 // WhatsApp components
 import { WhatsAppHubView } from './components/whatsapp/WhatsAppHubView.jsx';
 import { WhatsAppSimulatorModal } from './components/whatsapp/WhatsAppSimulatorModal.jsx';
+import { WhatsAppBatchModal } from './components/whatsapp/WhatsAppBatchModal.jsx';
 
 // Patient Portal for WhatsApp confirmation link
 import { PatientPortalView } from './components/portal/PatientPortalView.jsx';
@@ -152,6 +153,7 @@ function MainAppContent() {
       <RegisterClinicModal />
       <LoginModal />
       <WhatsAppSimulatorModal />
+      <WhatsAppBatchModal />
       <MedicalRecordEditorModal />
       <PrescriptionPrintModal />
       <PlanCheckoutModal />

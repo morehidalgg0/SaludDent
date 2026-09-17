@@ -57,6 +57,7 @@ export function ClinicProvider({ children }) {
     patientDetail: { isOpen: false, patient: null },
     newDoctor: { isOpen: false, doctor: null },
     whatsappSimulator: { isOpen: false, appointment: null },
+    whatsappBatch: { isOpen: false, date: null },
     medicalRecordEditor: { isOpen: false, patient: null, doctor: null, record: null },
     prescriptionPrint: { isOpen: false, record: null, type: 'receta' },
     planCheckout: { isOpen: false, plan: null },

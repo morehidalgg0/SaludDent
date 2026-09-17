@@ -15,9 +15,9 @@ export function AgendaViewHeader() {
     selectedDate, 
     setSelectedDate, 
     doctors, 
-    selectedDoctorId, 
+    selectedDoctorId,
     setSelectedDoctorId,
-    sendWhatsappBatch
+    openModal
   } = useClinic();
 
   const handlePrev = () => {
@@ -146,7 +146,7 @@ export function AgendaViewHeader() {
 
         {/* Action: Send batch WhatsApp */}
         <button
-          onClick={() => sendWhatsappBatch(selectedDate)}
+          onClick={() => openModal('whatsappBatch', { date: selectedDate })}
           className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md transition-colors"
         >
           <Send className="w-3.5 h-3.5 text-emerald-600" />
