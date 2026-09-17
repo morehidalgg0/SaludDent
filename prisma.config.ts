@@ -3,12 +3,23 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
+// `prisma migrate deploy` takes a session-level advisory lock, which Neon's connection
+// pooler (PgBouncer in transaction mode) doesn't support — every statement can land on a
+// different backend, so the lock times out (P1002). The app's own runtime connection
+// (server/db.js) is unaffected and keeps using the pooled DATABASE_URL directly; only the
+// Prisma CLI (this config file) needs the direct, unpooled host, which Neon exposes at the
+// same hostname minus "-pooler".
+function toDirectUrl(url?: string): string | undefined {
+  if (!url) return url;
+  return url.replace(/^(postgres(?:ql)?:\/\/[^@]+@)([^.]+)-pooler(\.[^/?]+)/, "$1$2$3");
+}
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: process.env["DIRECT_DATABASE_URL"] || toDirectUrl(process.env["DATABASE_URL"]),
   },
 });
