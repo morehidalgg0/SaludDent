@@ -31,7 +31,9 @@ export function WhatsAppBatchModal() {
 
   const handleSendAndNext = async () => {
     if (!current) return;
-    const waWindow = current.patientPhone ? window.open('', '_blank', 'noopener,noreferrer') : null;
+    // NOTE: no 'noopener' here — it makes window.open() return null in most browsers,
+    // which would silently break the location.href redirect below.
+    const waWindow = current.patientPhone ? window.open('', '_blank') : null;
     setIsSending(true);
     try {
       const result = await sendWhatsappReminder(current.id);

@@ -74,7 +74,9 @@ export function WhatsAppSimulatorModal() {
   const handleSendReal = async () => {
     // Open the window synchronously (within the click gesture) to avoid popup blockers,
     // then redirect it once the backend responds with the real waLink.
-    const waWindow = window.open('', '_blank', 'noopener,noreferrer');
+    // NOTE: 'noopener' must NOT be passed here — browsers return null from window.open()
+    // when it's set, which would silently prevent the later location.href redirect.
+    const waWindow = window.open('', '_blank');
     setIsSending(true);
     try {
       const result = await sendWhatsappReminder(currentAppointment.id);
