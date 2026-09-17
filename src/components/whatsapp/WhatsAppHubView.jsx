@@ -14,19 +14,37 @@ import {
   Sparkles
 } from 'lucide-react';
 import { formatHumanDate } from '../../utils/dateUtils.js';
-import { toWhatsappPhone } from '../../utils/phoneUtils.js';
 
 export function WhatsAppHubView() {
-  const { 
-    selectedDate, 
-    setSelectedDate, 
-    appointments, 
-    sendWhatsappBatch, 
+  const {
+    selectedDate,
+    setSelectedDate,
+    appointments,
     sendWhatsappReminder,
-    openModal 
+    openModal,
+    addToast
   } = useClinic();
 
   const [statusFilter, setStatusFilter] = useState('all');
+  const [sendingId, setSendingId] = useState(null);
+
+  const handleSendReminder = async (apt) => {
+    // Open the window synchronously (within the click gesture) to avoid popup blockers,
+    // then redirect it once the backend responds with the real waLink. No 'noopener' here —
+    // it makes window.open() return null in most browsers, breaking the redirect below.
+    const waWindow = apt.patientPhone ? window.open('', '_blank') : null;
+    setSendingId(apt.id);
+    try {
+      const result = await sendWhatsappReminder(apt.id);
+      if (waWindow) waWindow.location.href = result.waLink;
+      addToast({ type: 'success', title: 'Recordatorio Enviado', message: `Se abrió WhatsApp para ${apt.patientName}.` });
+    } catch (err) {
+      if (waWindow) waWindow.close();
+      addToast({ type: 'error', title: 'Error al Enviar Recordatorio', message: err.message || `No se pudo enviar a ${apt.patientName}.` });
+    } finally {
+      setSendingId(null);
+    }
+  };
 
   const dayAppointments = appointments.filter(a => a.date === selectedDate);
   const filteredAppointments = statusFilter === 'all' 
@@ -146,8 +164,6 @@ export function WhatsAppHubView() {
             </div>
           ) : (
             filteredAppointments.map(apt => {
-              const directWa = `https://wa.me/${toWhatsappPhone(apt.patientPhone)}`;
-
               return (
                 <div key={apt.id} className="p-4 hover:bg-slate-50/80 transition-colors flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
                   <div className="flex items-start gap-3 min-w-0">
@@ -184,15 +200,14 @@ export function WhatsAppHubView() {
                       <span>Simular Interacción</span>
                     </button>
 
-                    <a
-                      href={directWa}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 text-slate-500 hover:text-emerald-600 bg-slate-100 hover:bg-emerald-50 rounded-xl transition-colors"
-                      title="Abrir chat en WhatsApp Web"
+                    <button
+                      onClick={() => handleSendReminder(apt)}
+                      disabled={sendingId === apt.id || !apt.patientPhone}
+                      className="p-2 text-slate-500 hover:text-emerald-600 bg-slate-100 hover:bg-emerald-50 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      title={apt.patientPhone ? 'Enviar recordatorio por WhatsApp' : 'El paciente no tiene teléfono cargado'}
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
+                    </button>
                   </div>
                 </div>
               );
