@@ -26,7 +26,7 @@ export function ClinicProvider({ children }) {
   // Navigation & View States
   // 'home' | 'agenda' | 'fichero' | 'historias' | 'profesionales' | 'whatsapp' | 'espera' | 'suscripcion'
   const [currentSection, setCurrentSection] = useState('home');
-  const [selectedDate, setSelectedDate] = useState('2026-08-16'); // Anchor date matching seed data
+  const [selectedDate, setSelectedDate] = useState(() => formatDateISO(new Date()));
   const [agendaView, setAgendaView] = useState('diaria'); // 'diaria' | 'semanal' | 'quincenal' | 'mensual'
   
   // Filters

@@ -49,7 +49,7 @@ export function AgendaViewHeader() {
   };
 
   const handleToday = () => {
-    setSelectedDate('2026-08-16');
+    setSelectedDate(formatDateISO(new Date()));
   };
 
   const viewTabs = [

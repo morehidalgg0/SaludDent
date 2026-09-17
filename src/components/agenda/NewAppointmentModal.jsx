@@ -16,7 +16,7 @@ import {
   User,
   Sparkles
 } from 'lucide-react';
-import { generateTimeSlots, calculateEndTime, formatHumanDate } from '../../utils/dateUtils.js';
+import { generateTimeSlots, calculateEndTime, formatHumanDate, formatDateISO } from '../../utils/dateUtils.js';
 
 export function NewAppointmentModal() {
   const { 
@@ -51,7 +51,7 @@ export function NewAppointmentModal() {
 
   // Appointment fields
   const [doctorId, setDoctorId] = useState(doctors[0]?.id || 'doc-1');
-  const [date, setDate] = useState(prefill.date || '2026-08-16');
+  const [date, setDate] = useState(prefill.date || formatDateISO(new Date()));
   const [time, setTime] = useState(prefill.time || '09:00');
   const [durationMinutes, setDurationMinutes] = useState(15);
   const [isOverturn, setIsOverturn] = useState(false);
