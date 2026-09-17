@@ -1,10 +1,11 @@
 import React from 'react';
 import { useClinic } from '../../context/ClinicContext.jsx';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Send, 
-  Filter
+import {
+  ChevronLeft,
+  ChevronRight,
+  Send,
+  Filter,
+  FileSpreadsheet
 } from 'lucide-react';
 import { formatHumanDate, formatDateISO, parseDateISO } from '../../utils/dateUtils.js';
 
@@ -151,6 +152,15 @@ export function AgendaViewHeader() {
         >
           <Send className="w-3.5 h-3.5 text-emerald-600" />
           <span>Enviar recordatorios WhatsApp del día</span>
+        </button>
+
+        {/* Action: Import appointments */}
+        <button
+          onClick={() => openModal('importAppointments')}
+          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md transition-colors"
+        >
+          <FileSpreadsheet className="w-3.5 h-3.5 text-slate-500" />
+          <span>Importar Citas</span>
         </button>
 
       </div>

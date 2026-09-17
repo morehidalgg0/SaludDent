@@ -63,7 +63,8 @@ export function ClinicProvider({ children }) {
     planCheckout: { isOpen: false, plan: null },
     registerClinicModal: { isOpen: false },
     loginModal: { isOpen: false },
-    importPatients: { isOpen: false }
+    importPatients: { isOpen: false },
+    importAppointments: { isOpen: false }
   });
 
   // Sound effect
@@ -404,6 +405,25 @@ export function ClinicProvider({ children }) {
     return totals;
   };
 
+  const importAppointments = async (appointmentsArray, onProgress) => {
+    const totals = { created: 0, skipped: 0, errors: [] };
+    for (let i = 0; i < appointmentsArray.length; i += IMPORT_BATCH_SIZE) {
+      const batch = appointmentsArray.slice(i, i + IMPORT_BATCH_SIZE);
+      const batchResult = await api.importAppointments(batch);
+      totals.created += batchResult.created;
+      totals.skipped += batchResult.skipped;
+      totals.errors.push(...(batchResult.errors || []));
+      onProgress?.({ done: Math.min(i + IMPORT_BATCH_SIZE, appointmentsArray.length), total: appointmentsArray.length });
+    }
+    await loadAppointments();
+    addToast({
+      type: 'success',
+      title: 'Importación de Citas Completada',
+      message: `Se importaron ${totals.created} citas. ${totals.skipped} saltadas.`
+    });
+    return totals;
+  };
+
   const createAppointment = async (appointmentData) => {
     const created = await api.createAppointment(appointmentData);
     await loadAppointments();
@@ -521,6 +541,7 @@ export function ClinicProvider({ children }) {
       updatePatient,
       deletePatient,
       importPatients,
+      importAppointments,
       createAppointment,
       updateAppointment,
       deleteAppointment,

@@ -16,6 +16,7 @@ import { WeeklyView } from './components/agenda/WeeklyView.jsx';
 import { BiweeklyView } from './components/agenda/BiweeklyView.jsx';
 import { MonthlyView } from './components/agenda/MonthlyView.jsx';
 import { NewAppointmentModal } from './components/agenda/NewAppointmentModal.jsx';
+import { ImportAppointmentsModal } from './components/agenda/ImportAppointmentsModal.jsx';
 import { AppointmentDetailModal } from './components/agenda/AppointmentDetailModal.jsx';
 
 // Fichero components
@@ -145,6 +146,7 @@ function MainAppContent() {
 
       {/* All Application Modals */}
       <NewAppointmentModal />
+      <ImportAppointmentsModal />
       <AppointmentDetailModal />
       <NewPatientModal />
       <PatientDetailModal />

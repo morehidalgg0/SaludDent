@@ -137,6 +137,17 @@ export const api = {
     return json.data;
   },
 
+  async importAppointments(appointments) {
+    const res = await fetch(`${API_BASE}/appointments/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ appointments })
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) throw new Error(json.error || 'Error al importar citas');
+    return json.data;
+  },
+
   // --- APPOINTMENTS ---
   async getAppointments({ date, startDate, endDate, doctorId, status } = {}) {
     const params = new URLSearchParams();

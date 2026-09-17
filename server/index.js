@@ -6,7 +6,7 @@ import {
   getClinic, validateLogin, updateClinic, registerClinicAccount,
   getDoctors, getDoctorById, createDoctor, updateDoctor, deleteDoctor,
   getPatients, getPatientById, createPatient, bulkCreatePatients, updatePatient, deletePatient,
-  getAppointments, getAppointmentById, getAppointmentByToken, createAppointment, updateAppointment, deleteAppointment,
+  getAppointments, getAppointmentById, getAppointmentByToken, createAppointment, bulkCreateAppointments, updateAppointment, deleteAppointment,
   getDaySummary, getDaysSummaries,
   getMedicalRecords, getMedicalRecordById, createMedicalRecord, updateMedicalRecord,
   addWhatsappLog, getWhatsappLogs,
@@ -186,6 +186,17 @@ app.get('/api/appointments/summary', async (req, res) => {
     if (date) return res.json({ success: true, data: await getDaySummary(date) });
     if (startDate && endDate) return res.json({ success: true, data: await getDaysSummaries(startDate, endDate) });
     res.json({ success: true, data: await getDaySummary(new Date().toISOString().split('T')[0]) });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.post('/api/appointments/import', async (req, res) => {
+  try {
+    const { appointments } = req.body;
+    if (!Array.isArray(appointments) || appointments.length === 0) return res.status(400).json({ success: false, error: 'No se enviaron citas para importar.' });
+    if (appointments.length > 500) return res.status(400).json({ success: false, error: 'Máximo 500 citas por request (el frontend importa en lotes automáticamente).' });
+    const result = await bulkCreateAppointments(appointments);
+    broadcastEvent('APPOINTMENT_CREATED', { count: result.created }, { title: 'Importación de Citas', message: `Se importaron ${result.created} citas. ${result.skipped} saltadas.` });
+    res.json({ success: true, data: result });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 

@@ -393,6 +393,96 @@ export async function getAppointmentByToken(token) {
   return prisma.appointment.findUnique({ where: { confirmationToken: token } });
 }
 
+// Maps the free-text appointment status from a legacy export (e.g. Dentalink's
+// "Estado Cita") to this system's status + whatsappStatus fields.
+function mapLegacyStatus(rawStatus) {
+  const s = (rawStatus || '').toLowerCase().trim();
+  if (s.includes('anulad') || s.includes('cancelad')) return { status: 'cancelled', whatsappStatus: 'not_sent' };
+  if (s.includes('confirmad')) return { status: 'confirmed', whatsappStatus: 'confirmed_by_patient' };
+  if (s.includes('notificad') || s.includes('enviad')) return { status: 'pending', whatsappStatus: 'sent' };
+  return { status: 'pending', whatsappStatus: 'not_sent' };
+}
+
+function diffMinutes(startHHMMSS, endHHMMSS) {
+  const toMin = (t) => { const [h, m] = (t || '').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+  const diff = toMin(endHHMMSS) - toMin(startHHMMSS);
+  return diff > 0 ? diff : 15;
+}
+
+export async function bulkCreateAppointments(rows) {
+  const clinic = await prisma.clinic.findFirst();
+  if (!clinic) throw new Error('No hay clínica registrada');
+
+  const [patients, doctors] = await Promise.all([
+    prisma.patient.findMany({ where: { clinicId: clinic.id } }),
+    prisma.doctor.findMany({ where: { clinicId: clinic.id } })
+  ]);
+
+  const patientByFichero = new Map(patients.map(p => [p.ficheroNumber, p]));
+  const patientByDni = new Map(patients.filter(p => p.dni).map(p => [p.dni, p]));
+  const patientByName = new Map(patients.map(p => [`${p.firstName} ${p.lastName}`.toLowerCase().trim(), p]));
+  const doctorByName = new Map(doctors.map(d => [d.name.toLowerCase().trim(), d]));
+
+  let created = 0;
+  let skipped = 0;
+  const errors = [];
+  const toCreate = [];
+
+  rows.forEach((row, idx) => {
+    let patient = null;
+    if (row.ficheroNumber && patientByFichero.has(row.ficheroNumber)) patient = patientByFichero.get(row.ficheroNumber);
+    else if (row.dni && patientByDni.has(row.dni)) patient = patientByDni.get(row.dni);
+    else if (row.patientName) patient = patientByName.get(row.patientName.toLowerCase().trim()) || null;
+
+    let doctor = null;
+    const doctorKey = (row.doctorName || '').toLowerCase().trim();
+    if (doctorKey) {
+      const keyWords = doctorKey.split(/\s+/).filter(Boolean);
+      doctor = doctorByName.get(doctorKey)
+        || doctors.find(d => keyWords.every(w => d.name.toLowerCase().includes(w)));
+    }
+    if (!doctor && doctors.length === 1) doctor = doctors[0];
+
+    if (!doctor) {
+      errors.push({ row: row._row, error: `No se encontró el profesional "${row.doctorName || ''}"` });
+      skipped++;
+      return;
+    }
+    if (!row.date || !row.time) {
+      errors.push({ row: row._row, error: 'Falta fecha u hora de la cita' });
+      skipped++;
+      return;
+    }
+
+    const { status, whatsappStatus } = mapLegacyStatus(row.status);
+
+    toCreate.push({
+      date: row.date,
+      time: row.time,
+      durationMinutes: row.endTime ? diffMinutes(row.time, row.endTime) : 15,
+      status,
+      whatsappStatus,
+      confirmationToken: `tok_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 8)}`,
+      notes: row.notes || '',
+      patientName: patient ? `${patient.firstName} ${patient.lastName}` : (row.patientName || 'Paciente sin registrar'),
+      patientPhone: patient ? patient.phone : (row.patientPhone || ''),
+      ficheroNumber: patient ? patient.ficheroNumber : (row.ficheroNumber || 'S/F'),
+      doctorName: doctor.name,
+      specialty: doctor.specialty,
+      clinicId: clinic.id,
+      doctorId: doctor.id,
+      patientId: patient ? patient.id : null
+    });
+    created++;
+  });
+
+  if (toCreate.length > 0) {
+    await prisma.appointment.createMany({ data: toCreate });
+  }
+
+  return { created, skipped, errors };
+}
+
 export async function createAppointment(appointmentData) {
   const clinic = await prisma.clinic.findFirst();
   if (!clinic) throw new Error('No hay clínica registrada');
