@@ -18,25 +18,30 @@ import {
   Flame,
   Send,
   XCircle,
-  RotateCcw
+  RotateCcw,
+  CalendarPlus
 } from 'lucide-react';
 import { calculateEndTime, formatHumanDate } from '../../utils/dateUtils.js';
 import { toWhatsappPhone } from '../../utils/phoneUtils.js';
 
 export function AppointmentDetailModal() {
-  const { 
-    modals, 
-    closeModal, 
-    quickChangeStatus, 
-    deleteAppointment, 
-    openModal, 
+  const {
+    modals,
+    closeModal,
+    quickChangeStatus,
+    deleteAppointment,
+    openModal,
     sendWhatsappReminder,
     setCurrentSection,
-    patients
+    patients,
+    appointments
   } = useClinic();
 
   const isOpen = modals.appointmentDetail.isOpen;
-  const appointment = modals.appointmentDetail.appointment;
+  // Prefer the live copy from context so status changes (e.g. anular) re-render this modal
+  // immediately instead of showing the stale snapshot captured when it was opened.
+  const appointment = modals.appointmentDetail.appointment
+    && (appointments.find(a => a.id === modals.appointmentDetail.appointment.id) || modals.appointmentDetail.appointment);
 
   if (!isOpen || !appointment) return null;
 
@@ -212,7 +217,6 @@ export function AppointmentDetailModal() {
                 onClick={async () => {
                   if (confirm(`¿Desea anular el turno de las ${appointment.time} hs (${appointment.patientName})?`)) {
                     await quickChangeStatus(appointment.id, 'cancelled');
-                    closeModal('appointmentDetail');
                   }
                 }}
                 className="w-full py-2.5 px-4 rounded-xl font-bold text-xs text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center justify-center gap-2 transition-colors"
@@ -221,16 +225,33 @@ export function AppointmentDetailModal() {
                 <span>Anular Turno (Liberar Horario)</span>
               </button>
             ) : (
-              <button
-                onClick={async () => {
-                  await quickChangeStatus(appointment.id, 'pending');
-                  closeModal('appointmentDetail');
-                }}
-                className="w-full py-2.5 px-4 rounded-xl font-bold text-xs text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200 flex items-center justify-center gap-2 transition-colors"
-              >
-                <RotateCcw className="w-4 h-4 text-slate-600" />
-                <span>Reactivar Turno Anulado</span>
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    closeModal('appointmentDetail');
+                    openModal('newAppointment', {
+                      prefill: {
+                        patientId: appointment.patientId || undefined,
+                        doctorId: appointment.doctorId
+                      }
+                    });
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl font-bold text-xs text-white bg-slate-900 hover:bg-slate-800 flex items-center justify-center gap-2 transition-colors"
+                >
+                  <CalendarPlus className="w-4 h-4 text-emerald-400" />
+                  <span>Agendar Otro Turno a {appointment.patientName}</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    await quickChangeStatus(appointment.id, 'pending');
+                    closeModal('appointmentDetail');
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl font-bold text-xs text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200 flex items-center justify-center gap-2 transition-colors"
+                >
+                  <RotateCcw className="w-4 h-4 text-slate-600" />
+                  <span>Reactivar Turno Anulado</span>
+                </button>
+              </>
             )}
 
             {/* WhatsApp Simulator & Action Button */}

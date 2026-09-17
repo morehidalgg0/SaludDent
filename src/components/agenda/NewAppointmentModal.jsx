@@ -65,6 +65,7 @@ export function NewAppointmentModal() {
     if (prefill.date) setDate(prefill.date);
     if (prefill.time) setTime(prefill.time);
     if (prefill.doctorId) setDoctorId(prefill.doctorId);
+    if (prefill.isOverturn) setIsOverturn(true);
     if (prefill.patientId) {
       setSelectedPatientId(prefill.patientId);
       setPatientMode('existing');

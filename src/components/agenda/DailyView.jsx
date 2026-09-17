@@ -94,9 +94,25 @@ export function DailyView() {
                         className="p-1 border-r border-slate-100 last:border-r-0 min-h-[46px] relative group flex flex-col gap-1.5"
                       >
                         {slotAppts.length > 0 ? (
-                          slotAppts.map(apt => (
-                            <AppointmentCard key={apt.id} appointment={apt} compact={slotAppts.length > 1} />
-                          ))
+                          <>
+                            {slotAppts.map(apt => (
+                              <AppointmentCard key={apt.id} appointment={apt} compact={slotAppts.length > 1} />
+                            ))}
+                            <button
+                              onClick={() => openModal('newAppointment', {
+                                prefill: {
+                                  date: selectedDate,
+                                  time: slot,
+                                  doctorId: doc.id,
+                                  isOverturn: true
+                                }
+                              })}
+                              className="w-full py-1 rounded border border-dashed border-amber-300 hover:border-amber-500 hover:bg-amber-50 text-amber-600 hover:text-amber-800 flex items-center justify-center gap-1 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-all"
+                            >
+                              <Plus className="w-3 h-3" />
+                              <span>Sobreturno</span>
+                            </button>
+                          </>
                         ) : (
                           /* Empty slot - Clickable to schedule */
                           <button
