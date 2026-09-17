@@ -21,6 +21,7 @@ import {
   Activity
 } from 'lucide-react';
 import { formatHumanDate } from '../../utils/dateUtils.js';
+import { toWhatsappPhone } from '../../utils/phoneUtils.js';
 
 export function PatientDetailModal() {
   const { 
@@ -56,8 +57,7 @@ export function PatientDetailModal() {
   const appointments = data.appointments || [];
   const medicalRecords = data.medicalRecords || [];
 
-  const cleanPhone = (data.phone || '').replace(/\D/g, '');
-  const waLink = `https://wa.me/${cleanPhone}`;
+  const waLink = `https://wa.me/${toWhatsappPhone(data.phone)}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">

@@ -21,6 +21,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { calculateEndTime, formatHumanDate } from '../../utils/dateUtils.js';
+import { toWhatsappPhone } from '../../utils/phoneUtils.js';
 
 export function AppointmentDetailModal() {
   const { 
@@ -43,8 +44,7 @@ export function AppointmentDetailModal() {
   const endTime = calculateEndTime(appointment.time, appointment.durationMinutes);
   const patient = patients.find(p => p.id === appointment.patientId);
 
-  const cleanPhone = (appointment.patientPhone || '').replace(/\D/g, '');
-  const directWaLink = `https://wa.me/${cleanPhone}`;
+  const directWaLink = `https://wa.me/${toWhatsappPhone(appointment.patientPhone)}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">

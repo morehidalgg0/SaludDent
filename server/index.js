@@ -16,6 +16,18 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Normalizes a phone number to the international format WhatsApp needs to open a
+// specific chat (549 + area code + number). Without the country/mobile prefix,
+// wa.me can't resolve the contact and opens WhatsApp with no chat/message at all.
+function toWhatsappPhone(rawPhone) {
+  let digits = (rawPhone || '').replace(/\D/g, '');
+  if (!digits) return '';
+  digits = digits.replace(/^0+/, '');
+  if (digits.startsWith('549')) return digits;
+  if (digits.startsWith('54')) return `549${digits.slice(2)}`;
+  return `549${digits}`;
+}
+
 const app = express();
 
 app.use(cors());
@@ -233,8 +245,7 @@ O responda:
 1 para Confirmar Turno
 2 para Cancelar Turno`;
 
-    const cleanPhone = (appointment.patientPhone || '').replace(/\D/g, '');
-    const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageTemplate)}`;
+    const waLink = `https://wa.me/${toWhatsappPhone(appointment.patientPhone)}?text=${encodeURIComponent(messageTemplate)}`;
 
     const updated = await updateAppointment(appointment.id, { whatsappStatus: 'sent' });
     await addWhatsappLog({ type: 'REMINDER_SENT', appointmentId: appointment.id, patientName: appointment.patientName, phone: appointment.patientPhone, messagePreview: messageTemplate.substring(0, 100) + '...' });

@@ -14,6 +14,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { formatHumanDate } from '../../utils/dateUtils.js';
+import { toWhatsappPhone } from '../../utils/phoneUtils.js';
 
 export function WhatsAppHubView() {
   const { 
@@ -145,8 +146,7 @@ export function WhatsAppHubView() {
             </div>
           ) : (
             filteredAppointments.map(apt => {
-              const cleanPhone = (apt.patientPhone || '').replace(/\D/g, '');
-              const directWa = `https://wa.me/${cleanPhone}`;
+              const directWa = `https://wa.me/${toWhatsappPhone(apt.patientPhone)}`;
 
               return (
                 <div key={apt.id} className="p-4 hover:bg-slate-50/80 transition-colors flex flex-col md:flex-row items-start md:items-center justify-between gap-3">

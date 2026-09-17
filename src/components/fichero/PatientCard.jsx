@@ -8,12 +8,12 @@ import {
   FileText, 
   MessageSquare
 } from 'lucide-react';
+import { toWhatsappPhone } from '../../utils/phoneUtils.js';
 
 export function PatientCard({ patient }) {
   const { openModal, setCurrentSection } = useClinic();
 
-  const cleanPhone = (patient.phone || '').replace(/\D/g, '');
-  const waLink = `https://wa.me/${cleanPhone}`;
+  const waLink = `https://wa.me/${toWhatsappPhone(patient.phone)}`;
 
   return (
     <div 
