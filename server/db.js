@@ -398,6 +398,7 @@ export async function getAppointmentByToken(token) {
 function mapLegacyStatus(rawStatus) {
   const s = (rawStatus || '').toLowerCase().trim();
   if (s.includes('anulad') || s.includes('cancelad')) return { status: 'cancelled', whatsappStatus: 'not_sent' };
+  if (s.includes('no confirmad')) return { status: 'pending', whatsappStatus: 'not_sent' };
   if (s.includes('confirmad')) return { status: 'confirmed', whatsappStatus: 'confirmed_by_patient' };
   if (s.includes('notificad') || s.includes('enviad')) return { status: 'pending', whatsappStatus: 'sent' };
   return { status: 'pending', whatsappStatus: 'not_sent' };
