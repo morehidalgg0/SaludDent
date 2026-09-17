@@ -16,12 +16,13 @@ import {
 import { formatHumanDate } from '../../utils/dateUtils.js';
 
 export function WhatsAppSimulatorModal() {
-  const { 
-    modals, 
-    closeModal, 
-    appointments, 
+  const {
+    modals,
+    closeModal,
+    appointments,
     simulatePatientAction,
-    sendWhatsappReminder
+    sendWhatsappReminder,
+    addToast
   } = useClinic();
 
   const isOpen = modals.whatsappSimulator.isOpen;
@@ -34,6 +35,7 @@ export function WhatsAppSimulatorModal() {
 
   const [simulatedResponses, setSimulatedResponses] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   if (!isOpen) return null;
 
@@ -69,10 +71,30 @@ export function WhatsAppSimulatorModal() {
     }
   };
 
-  const cleanPhone = (currentAppointment.patientPhone || '').replace(/\D/g, '');
-  const realWaLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-    `Hola ${currentAppointment.patientName}, recordatorio de turno el ${currentAppointment.date} a las ${currentAppointment.time} hs con ${currentAppointment.doctorName}.`
-  )}`;
+  const handleSendReal = async () => {
+    // Open the window synchronously (within the click gesture) to avoid popup blockers,
+    // then redirect it once the backend responds with the real waLink.
+    const waWindow = window.open('', '_blank', 'noopener,noreferrer');
+    setIsSending(true);
+    try {
+      const result = await sendWhatsappReminder(currentAppointment.id);
+      if (waWindow) waWindow.location.href = result.waLink;
+      addToast({
+        type: 'success',
+        title: 'Recordatorio Enviado',
+        message: `Se abrió WhatsApp con el mensaje para ${currentAppointment.patientName}.`
+      });
+    } catch (err) {
+      if (waWindow) waWindow.close();
+      addToast({
+        type: 'error',
+        title: 'Error al Enviar Recordatorio',
+        message: err.message || 'No se pudo generar el mensaje de WhatsApp.'
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs">
@@ -139,16 +161,18 @@ export function WhatsAppSimulatorModal() {
               </div>
             </div>
 
-            {/* Open Direct wa.me Link Button */}
-            <a
-              href={realWaLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 text-xs font-bold text-emerald-700 bg-white hover:bg-emerald-50 border border-emerald-300 rounded-xl transition-all shadow-2xs"
+            {/* Send Real Reminder via Backend + Open wa.me */}
+            <button
+              onClick={handleSendReal}
+              disabled={isSending || !currentAppointment.patientPhone}
+              className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 text-xs font-bold text-emerald-700 bg-white hover:bg-emerald-50 border border-emerald-300 rounded-xl transition-all shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              <span>Abrir en WhatsApp Web Real (wa.me)</span>
-            </a>
+              <span>{isSending ? 'Enviando...' : 'Enviar Recordatorio Real (WhatsApp)'}</span>
+            </button>
+            {!currentAppointment.patientPhone && (
+              <p className="text-[10px] text-rose-500 text-center -mt-2">El paciente no tiene teléfono cargado.</p>
+            )}
 
           </div>
 
