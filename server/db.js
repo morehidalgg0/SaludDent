@@ -9,6 +9,27 @@ function hashPassword(password) {
   return crypto.createHash('sha256').update(password).digest('hex');
 }
 
+// Fichero numbers look like "F-10240". Sorting them as text breaks once numbers of
+// different digit-lengths coexist (e.g. imported "F-1".."F-3380" vs "F-10240"), so the
+// next sequence number is computed from the actual numeric max instead of a text ORDER BY.
+async function getNextFicheroSeq(clinicId) {
+  const patients = await prisma.patient.findMany({ where: { clinicId }, select: { ficheroNumber: true } });
+  let max = 10239;
+  for (const p of patients) {
+    const n = parseInt((p.ficheroNumber || '').replace('F-', ''), 10);
+    if (Number.isFinite(n) && n > max) max = n;
+  }
+  return max;
+}
+
+// Normalizes an imported fichero/patient number (e.g. "1", "3380") to this system's
+// "F-<n>" convention. Leaves values that already look like "F-<n>" untouched.
+function normalizeFicheroNumber(raw) {
+  const trimmed = (raw || '').trim();
+  if (!trimmed) return '';
+  return /^\d+$/.test(trimmed) ? `F-${trimmed}` : trimmed;
+}
+
 // --- CLINIC INFO & REGISTRATION (ONBOARDING) ---
 export async function getClinic() {
   const clinic = await prisma.clinic.findFirst();
@@ -215,13 +236,9 @@ export async function createPatient(patientData) {
   const clinic = await prisma.clinic.findFirst();
   if (!clinic) throw new Error('No hay clínica registrada');
 
-  let ficheroNumber = patientData.ficheroNumber;
+  let ficheroNumber = normalizeFicheroNumber(patientData.ficheroNumber);
   if (!ficheroNumber) {
-    const lastPatient = await prisma.patient.findFirst({
-      where: { clinicId: clinic.id },
-      orderBy: { ficheroNumber: 'desc' }
-    });
-    const lastNum = lastPatient ? parseInt(lastPatient.ficheroNumber.replace('F-', ''), 10) : 10239;
+    const lastNum = await getNextFicheroSeq(clinic.id);
     ficheroNumber = `F-${lastNum + 1}`;
   }
 
@@ -230,7 +247,7 @@ export async function createPatient(patientData) {
       ficheroNumber,
       firstName: patientData.firstName || '',
       lastName: patientData.lastName || '',
-      dni: patientData.dni || '',
+      dni: patientData.dni || null,
       phone: patientData.phone || '',
       email: patientData.email || '',
       birthDate: patientData.birthDate || '',
@@ -257,12 +274,12 @@ export async function bulkCreatePatients(patientsArray) {
   const existingDnis = new Set(existingPatients.map(p => p.dni).filter(Boolean));
   const existingFicheros = new Set(existingPatients.map(p => p.ficheroNumber).filter(Boolean));
 
-  // Find current max fichero number
-  const lastPatient = await prisma.patient.findFirst({
-    where: { clinicId: clinic.id },
-    orderBy: { ficheroNumber: 'desc' }
-  });
-  let ficheroSeq = lastPatient ? parseInt(lastPatient.ficheroNumber.replace('F-', ''), 10) : 10239;
+  // Find current max fichero number (numeric max, not text ORDER BY — see getNextFicheroSeq).
+  let ficheroSeq = 10239;
+  for (const p of existingPatients) {
+    const n = parseInt((p.ficheroNumber || '').replace('F-', ''), 10);
+    if (Number.isFinite(n) && n > ficheroSeq) ficheroSeq = n;
+  }
 
   let created = 0;
   let skipped = 0;
@@ -270,8 +287,10 @@ export async function bulkCreatePatients(patientsArray) {
   const toCreate = [];
 
   for (const patientData of patientsArray) {
-    const dni = (patientData.dni || '').replace(/\./g, '').trim();
-    const fichero = (patientData.ficheroNumber || '').trim();
+    const rawDni = (patientData.dni || '').replace(/\./g, '').trim();
+    // Only accept digit-only DNIs; anything else (blank, "-", "DNI" placeholder text, etc.) is treated as "no DNI on file".
+    const dni = /^\d+$/.test(rawDni) ? rawDni : '';
+    const fichero = normalizeFicheroNumber(patientData.ficheroNumber);
 
     if (!patientData.firstName || !patientData.lastName) {
       errors.push({ row: patientData._row, error: 'Faltan nombre o apellido' });
@@ -297,7 +316,7 @@ export async function bulkCreatePatients(patientsArray) {
       ficheroNumber,
       firstName: patientData.firstName || '',
       lastName: patientData.lastName || '',
-      dni: patientData.dni || '',
+      dni: dni || null,
       phone: patientData.phone || '',
       email: patientData.email || '',
       birthDate: patientData.birthDate || '',

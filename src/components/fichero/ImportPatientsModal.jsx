@@ -27,13 +27,17 @@ const AUTO_MAP = {
   'nombre': 'firstName', 'name': 'firstName', 'first name': 'firstName', 'first_name': 'firstName',
   'apellido': 'lastName', 'lastname': 'lastName', 'last name': 'lastName', 'last_name': 'lastName', 'apellidos': 'lastName',
   'dni': 'dni', 'documento': 'dni', 'document': 'dni', 'id': 'dni', 'n° documento': 'dni', 'num documento': 'dni',
-  'teléfono': 'phone', 'telefono': 'phone', 'phone': 'phone', 'celular': 'phone', 'tel': 'phone', 'whatsapp': 'phone', 'movil': 'phone',
+  'cédula identidad / dni': 'dni', 'cedula identidad / dni': 'dni', 'cédula': 'dni', 'cedula': 'dni',
+  // Order matters when several columns map to the same field: the first non-empty value
+  // per row wins (see mapRow), so list the more-likely-populated column (celular) first.
+  'celular': 'phone', 'whatsapp': 'phone', 'movil': 'phone', 'móvil': 'phone',
+  'teléfono': 'phone', 'telefono': 'phone', 'phone': 'phone', 'tel': 'phone',
   'email': 'email', 'correo': 'email', 'mail': 'email', 'e-mail': 'email',
-  'fecha de nacimiento': 'birthDate', 'nacimiento': 'birthDate', 'birth date': 'birthDate', 'birthdate': 'birthDate', 'fnacimiento': 'birthDate', 'fecha_nacimiento': 'birthDate',
-  'n° fichero': 'ficheroNumber', 'n fichero': 'ficheroNumber', 'fichero': 'ficheroNumber', 'fichero n°': 'ficheroNumber', 'file number': 'ficheroNumber', 'n_interno': 'ficheroNumber', 'n interno': 'ficheroNumber',
-  'obra social': 'insurance', 'cobertura': 'insurance', 'insurance': 'insurance', 'prepaga': 'insurance', 'os': 'insurance',
+  'fecha de nacimiento': 'birthDate', 'nacimiento': 'birthDate', 'birth date': 'birthDate', 'birthdate': 'birthDate', 'fnacimiento': 'birthDate', 'fecha_nacimiento': 'birthDate', 'fecha de nac.': 'birthDate',
+  '# paciente': 'ficheroNumber', 'n° fichero': 'ficheroNumber', 'n fichero': 'ficheroNumber', 'fichero': 'ficheroNumber', 'fichero n°': 'ficheroNumber', 'n_interno': 'ficheroNumber', 'n interno': 'ficheroNumber', '# interno': 'ficheroNumber',
+  'obra social': 'insurance', 'cobertura': 'insurance', 'insurance': 'insurance', 'prepaga': 'insurance', 'os': 'insurance', 'convenio': 'insurance',
   'n° afiliado': 'insuranceNumber', 'n afiliado': 'insuranceNumber', 'afiliado': 'insuranceNumber', 'nro afiliado': 'insuranceNumber', 'credential': 'insuranceNumber',
-  'alergias': 'allergies', 'alergia': 'allergies', 'allergies': 'allergies', 'alergico': 'allergies',
+  'alergias': 'allergies', 'alergia': 'allergies', 'allergies': 'allergies', 'alergico': 'allergies', 'alertas': 'allergies',
   'grupo sanguíneo': 'bloodType', 'sangre': 'bloodType', 'blood type': 'bloodType', 'rh': 'bloodType',
   'contacto de emergencia': 'emergencyContact', 'emergencia': 'emergencyContact', 'emergency': 'emergencyContact', 'contacto emergencia': 'emergencyContact',
   'notas': 'notes', 'observaciones': 'notes', 'notes': 'notes', 'obs': 'notes', 'background': 'notes'
@@ -50,6 +54,7 @@ export function ImportPatientsModal() {
   const [mapping, setMapping] = useState({});
   const [fileName, setFileName] = useState('');
   const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(null);
   const [result, setResult] = useState(null);
   const [dragOver, setDragOver] = useState(false);
 
@@ -122,34 +127,35 @@ export function ImportPatientsModal() {
     if (file) processFile(file);
   };
 
-  const getPreviewData = () => {
-    return rawData.slice(0, 50).map((row, idx) => {
-      const patient = { _row: idx + 2 };
-      PATIENT_FIELDS.forEach(field => {
-        const sourceCol = Object.keys(mapping).find(col => mapping[col] === field.key);
-        if (sourceCol && row[sourceCol] !== undefined) {
-          patient[field.key] = String(row[sourceCol] || '').trim();
+  // Several source columns can end up mapped to the same field (e.g. "Teléfono" and
+  // "Celular" both map to phone). Rather than picking a fixed column, use the first one
+  // that actually has a value for this row — so an empty "Teléfono" doesn't shadow "Celular".
+  const mapRow = (row, idx) => {
+    const patient = { _row: idx + 2 };
+    PATIENT_FIELDS.forEach(field => {
+      const sourceCols = Object.keys(mapping).filter(col => mapping[col] === field.key);
+      for (const col of sourceCols) {
+        const value = row[col] !== undefined && row[col] !== null ? String(row[col]).trim() : '';
+        if (value) {
+          patient[field.key] = value;
+          break;
         }
-      });
-      return patient;
+      }
     });
+    return patient;
+  };
+
+  const getPreviewData = () => {
+    return rawData.slice(0, 50).map((row, idx) => mapRow(row, idx));
   };
 
   const handleImport = async () => {
     setIsImporting(true);
+    setImportProgress({ done: 0, total: rawData.length });
     try {
-      const patients = rawData.map((row, idx) => {
-        const patient = { _row: idx + 2 };
-        PATIENT_FIELDS.forEach(field => {
-          const sourceCol = Object.keys(mapping).find(col => mapping[col] === field.key);
-          if (sourceCol && row[sourceCol] !== undefined) {
-            patient[field.key] = String(row[sourceCol] || '').trim();
-          }
-        });
-        return patient;
-      });
+      const patients = rawData.map((row, idx) => mapRow(row, idx));
 
-      const res = await importPatients(patients);
+      const res = await importPatients(patients, setImportProgress);
       setResult(res);
       setStep(4);
     } catch (err) {
@@ -157,6 +163,7 @@ export function ImportPatientsModal() {
       setStep(4);
     } finally {
       setIsImporting(false);
+      setImportProgress(null);
     }
   };
 
@@ -214,7 +221,7 @@ export function ImportPatientsModal() {
                 Arrastrá tu archivo aquí o hacé click para seleccionar
               </p>
               <p className="text-xs text-slate-500">
-                Formatos aceptados: CSV, Excel (.xlsx, .xls) — Máximo 1000 pacientes
+                Formatos aceptados: CSV, Excel (.xlsx, .xls) — sin límite de pacientes (se importan en lotes)
               </p>
               <p className="text-xs text-slate-400 mt-3">
                 Si exportás desde Dentalink, usá el reporte "Listado de Pacientes"
@@ -395,7 +402,9 @@ export function ImportPatientsModal() {
                 {isImporting ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Importando...</span>
+                    <span>
+                      {importProgress ? `Importando... ${importProgress.done}/${importProgress.total}` : 'Importando...'}
+                    </span>
                   </>
                 ) : (
                   <>

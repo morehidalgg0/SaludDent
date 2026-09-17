@@ -381,15 +381,27 @@ export function ClinicProvider({ children }) {
     addToast({ type: 'info', title: 'Paciente Eliminado', message: 'Se eliminó la ficha del fichero.' });
   };
 
-  const importPatients = async (patientsArray) => {
-    const result = await api.importPatients(patientsArray);
+  const IMPORT_BATCH_SIZE = 300;
+
+  const importPatients = async (patientsArray, onProgress) => {
+    const totals = { created: 0, skipped: 0, errors: [] };
+    for (let i = 0; i < patientsArray.length; i += IMPORT_BATCH_SIZE) {
+      const batch = patientsArray.slice(i, i + IMPORT_BATCH_SIZE);
+      // Sequential (not parallel): each batch re-checks DNI/fichero duplicates against
+      // what the previous batch just committed, so cross-batch dedup stays correct.
+      const batchResult = await api.importPatients(batch);
+      totals.created += batchResult.created;
+      totals.skipped += batchResult.skipped;
+      totals.errors.push(...(batchResult.errors || []));
+      onProgress?.({ done: Math.min(i + IMPORT_BATCH_SIZE, patientsArray.length), total: patientsArray.length });
+    }
     await loadPatients();
     addToast({
       type: 'success',
       title: 'Importación Completada',
-      message: `Se importaron ${result.created} pacientes. ${result.skipped} saltados.`
+      message: `Se importaron ${totals.created} pacientes. ${totals.skipped} saltados.`
     });
-    return result;
+    return totals;
   };
 
   const createAppointment = async (appointmentData) => {

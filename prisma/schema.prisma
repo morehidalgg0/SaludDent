@@ -58,7 +58,7 @@ model Patient {
   ficheroNumber   String   @unique
   firstName       String
   lastName        String
-  dni             String   @unique
+  dni             String?  @unique
   phone           String   @default("")
   email           String   @default("")
   birthDate       String   @default("")

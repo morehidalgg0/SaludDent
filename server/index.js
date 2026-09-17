@@ -165,7 +165,7 @@ app.post('/api/patients/import', async (req, res) => {
   try {
     const { patients } = req.body;
     if (!Array.isArray(patients) || patients.length === 0) return res.status(400).json({ success: false, error: 'No se enviaron pacientes para importar.' });
-    if (patients.length > 1000) return res.status(400).json({ success: false, error: 'Máximo 1000 pacientes por importación.' });
+    if (patients.length > 500) return res.status(400).json({ success: false, error: 'Máximo 500 pacientes por request (el frontend importa en lotes automáticamente).' });
     const result = await bulkCreatePatients(patients);
     broadcastEvent('PATIENT_CREATED', { count: result.created }, { title: 'Importación de Pacientes', message: `Se importaron ${result.created} pacientes. ${result.skipped} saltados.` });
     res.json({ success: true, data: result });
