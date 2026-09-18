@@ -137,6 +137,24 @@ export const api = {
     return json.data;
   },
 
+  async aiClinicalAssist({ mode, text, context }) {
+    const res = await fetch(`${API_BASE}/ai/clinical-assist`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode, text, context })
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) throw new Error(json.error || 'Error al consultar la IA');
+    return json.data.text;
+  },
+
+  async aiInsights() {
+    const res = await fetch(`${API_BASE}/ai/insights`, { method: 'POST' });
+    const json = await res.json();
+    if (!res.ok || !json.success) throw new Error(json.error || 'Error al consultar la IA');
+    return json.data.text;
+  },
+
   async importAppointments(appointments) {
     const res = await fetch(`${API_BASE}/appointments/import`, {
       method: 'POST',

@@ -81,6 +81,23 @@ export function MedicalRecordEditorModal() {
   if (!isOpen) return null;
 
   const selectedDoctor = doctors.find(d => d.id === doctorId) || doctors[0];
+
+  const [aiBusy, setAiBusy] = useState(null);
+  const runAi = async (mode, sourceText, setter) => {
+    setAiBusy(mode);
+    try {
+      const result = await api.aiClinicalAssist({
+        mode,
+        text: sourceText,
+        context: { specialty: selectedDoctor?.specialty, reason, diagnosis, anamnesis }
+      });
+      setter(result);
+    } catch (err) {
+      addToast({ type: 'error', title: 'Asistente IA', message: err.message });
+    } finally {
+      setAiBusy(null);
+    }
+  };
   const selectedPatient = patients.find(p => p.id === patientId) || patients[0];
 
   const addPrescriptionItem = () => {
@@ -323,7 +340,18 @@ export function MedicalRecordEditorModal() {
 
           {/* Anamnesis / Historia de la Enfermedad Actual */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Anamnesis / Evolución Clínica</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-bold text-slate-700">Anamnesis / Evolución Clínica</label>
+              <button
+                type="button"
+                onClick={() => runAi('improve', anamnesis, setAnamnesis)}
+                disabled={aiBusy !== null || !anamnesis.trim()}
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 hover:text-indigo-900 disabled:opacity-40"
+              >
+                <Sparkles className="w-3 h-3" />
+                <span>{aiBusy === 'improve' ? 'Redactando...' : 'Mejorar redacción con IA'}</span>
+              </button>
+            </div>
             <textarea
               rows={2}
               placeholder="Descripción del cuadro clínico, tiempo de evolución, síntomas asociados..."
@@ -342,7 +370,18 @@ export function MedicalRecordEditorModal() {
 
           {/* Treatment Plan */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Plan de Tratamiento / Conducta Médica</label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-bold text-slate-700">Plan de Tratamiento / Conducta Médica</label>
+              <button
+                type="button"
+                onClick={() => runAi('suggest_plan', diagnosis || anamnesis, setTreatmentPlan)}
+                disabled={aiBusy !== null || !(diagnosis || anamnesis).trim()}
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 hover:text-indigo-900 disabled:opacity-40"
+              >
+                <Sparkles className="w-3 h-3" />
+                <span>{aiBusy === 'suggest_plan' ? 'Pensando...' : 'Sugerir borrador con IA'}</span>
+              </button>
+            </div>
             <textarea
               rows={2}
               placeholder="Procedimientos realizados en consultorio, pautas a seguir, fecha de próximo control..."

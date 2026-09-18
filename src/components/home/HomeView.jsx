@@ -1,5 +1,6 @@
 import React from 'react';
 import { useClinic } from '../../context/ClinicContext.jsx';
+import { AiInsightsCard } from './AiInsightsCard.jsx';
 import { 
   Calendar, 
   MessageSquare, 
@@ -71,6 +72,8 @@ export function HomeView() {
             <p className="text-[11px] text-slate-400">{subscription?.status === 'active' ? 'Activa' : 'Inactiva'}</p>
           </div>
         </div>
+
+        <AiInsightsCard />
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

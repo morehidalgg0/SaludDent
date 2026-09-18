@@ -10,8 +10,9 @@ import {
   getDaySummary, getDaysSummaries,
   getMedicalRecords, getMedicalRecordById, createMedicalRecord, updateMedicalRecord,
   addWhatsappLog, getWhatsappLogs,
-  getSubscription, changePlan, cancelSubscription
+  getSubscription, changePlan, cancelSubscription, getInsightsSnapshot
 } from './db.js';
+import { clinicalAssist, clinicInsights } from './ai.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -348,6 +349,22 @@ app.post('/api/subscription/cancel', async (req, res) => {
     const updated = await cancelSubscription();
     broadcastEvent('SUBSCRIPTION_UPDATED', updated, { title: 'Suscripción Cancelada', message: 'La renovación automática ha sido desactivada.' });
     res.json({ success: true, data: updated });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// --- AI ---
+app.post('/api/ai/clinical-assist', async (req, res) => {
+  try {
+    const { mode, text, context } = req.body;
+    res.json({ success: true, data: { text: await clinicalAssist({ mode, text, context }) } });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.post('/api/ai/insights', async (req, res) => {
+  try {
+    const snapshot = await getInsightsSnapshot();
+    if (!snapshot) return res.status(400).json({ success: false, error: 'No hay clínica registrada.' });
+    res.json({ success: true, data: { text: await clinicInsights(snapshot) } });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 

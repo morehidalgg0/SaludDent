@@ -749,3 +749,40 @@ export async function cancelSubscription() {
     data: { status: 'cancelled', autoRenew: false }
   });
 }
+
+// Aggregated, anonymous metrics for AI insights — no patient names/phones/DNIs leave the DB.
+export async function getInsightsSnapshot() {
+  const clinic = await prisma.clinic.findFirst();
+  if (!clinic) return null;
+
+  const today = new Date();
+  const iso = (d) => d.toISOString().split('T')[0];
+  const addDays = (n) => { const d = new Date(today); d.setDate(d.getDate() + n); return iso(d); };
+
+  const [upcoming, recentPast, totalPatients, totalDoctors] = await Promise.all([
+    prisma.appointment.findMany({
+      where: { clinicId: clinic.id, date: { gte: iso(today), lte: addDays(14) } },
+      select: { date: true, status: true, whatsappStatus: true, isOverturn: true }
+    }),
+    prisma.appointment.findMany({
+      where: { clinicId: clinic.id, date: { gte: addDays(-30), lt: iso(today) } },
+      select: { status: true }
+    }),
+    prisma.patient.count({ where: { clinicId: clinic.id } }),
+    prisma.doctor.count({ where: { clinicId: clinic.id } })
+  ]);
+
+  const byDate = {};
+  for (const a of upcoming) {
+    const day = (byDate[a.date] ||= { total: 0, cancelled: 0, confirmed: 0, unconfirmed: 0, reminderSent: 0, overturns: 0 });
+    if (a.status === 'cancelled') { day.cancelled++; continue; }
+    day.total++;
+    if (a.status === 'confirmed') day.confirmed++; else day.unconfirmed++;
+    if (a.whatsappStatus === 'sent') day.reminderSent++;
+    if (a.isOverturn) day.overturns++;
+  }
+
+  const past = { total: recentPast.length, cancelled: recentPast.filter(a => a.status === 'cancelled').length, attended: recentPast.filter(a => a.status === 'attended').length };
+
+  return { today: iso(today), totalPatients, totalDoctors, upcomingNext14DaysByDate: byDate, last30Days: past };
+}
