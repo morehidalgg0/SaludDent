@@ -60,6 +60,7 @@ export function ClinicProvider({ children }) {
     whatsappBatch: { isOpen: false, date: null },
     medicalRecordEditor: { isOpen: false, patient: null, doctor: null, record: null },
     prescriptionPrint: { isOpen: false, record: null, type: 'receta' },
+    dentalPrint: { isOpen: false, type: 'presupuesto', budget: null, patient: null, doctor: null, date: null },
     planCheckout: { isOpen: false, plan: null },
     registerClinicModal: { isOpen: false },
     loginModal: { isOpen: false },

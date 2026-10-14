@@ -43,7 +43,7 @@ export function MedicalRecordsView() {
     <div className="space-y-3">
       
       {/* Top Header */}
-      <div className="bg-white rounded-lg p-3.5 border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-base font-bold text-slate-900">Historias Clínicas & Evoluciones</h2>
@@ -58,7 +58,7 @@ export function MedicalRecordsView() {
 
         <button
           onClick={() => openModal('medicalRecordEditor', { patient: null, doctor: null })}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-lg transition-colors"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold text-xs rounded-xl transition-colors shadow-sm border border-amber-300"
         >
           <Plus className="w-3.5 h-3.5 text-emerald-400" />
           <span>+ Nueva Consulta Médica</span>
@@ -66,7 +66,7 @@ export function MedicalRecordsView() {
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white rounded-lg p-3 border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+      <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
         
         {/* Patient Selector */}
         <div className="flex items-center gap-2 flex-1">
@@ -119,7 +119,7 @@ export function MedicalRecordsView() {
             return (
               <div
                 key={record.id}
-                className="bg-white rounded-lg border border-slate-200 p-4 hover:border-slate-300 transition-all space-y-2.5 shadow-2xs"
+                className="bg-white rounded-xl border border-slate-200 p-4 hover:border-slate-300 transition-all space-y-2.5 shadow-sm"
               >
                 {/* Header Line */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">

@@ -114,6 +114,16 @@ export function MedicalRecordEditorModal() {
     setPrescriptions(prescriptions.filter((_, i) => i !== idx));
   };
 
+  const openDentalPrint = (type, budget = null) => {
+    openModal('dentalPrint', {
+      type,
+      budget,
+      patient: selectedPatient,
+      doctor: selectedDoctor,
+      date
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!patientId) {
@@ -158,12 +168,12 @@ export function MedicalRecordEditorModal() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-      <div className="bg-white rounded-3xl shadow-floating border border-slate-200 w-full max-w-4xl overflow-hidden my-6 animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 w-full max-w-4xl overflow-hidden my-6 animate-in fade-in zoom-in-95 duration-150">
         
         {/* Top Header */}
-        <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
+        <div className="bg-white text-slate-900 p-5 flex items-center justify-between border-b border-slate-200">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+            <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 border border-amber-200">
               <Stethoscope className="w-5 h-5" />
             </div>
             <div>
@@ -196,7 +206,7 @@ export function MedicalRecordEditorModal() {
                   type: 'receta'
                 });
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600/40 hover:bg-indigo-600 text-white rounded-xl text-xs font-bold border border-indigo-500/40 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-slate-900 rounded-xl text-xs font-bold border border-amber-300 transition-colors shadow-sm"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Imprimir Receta / Certificado</span>
@@ -212,13 +222,13 @@ export function MedicalRecordEditorModal() {
         <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[78vh] overflow-y-auto">
           
           {/* Header Data: Patient & Professional */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm">
             <div>
               <label className="block text-[11px] font-bold text-slate-600 mb-1">Paciente</label>
               <select
                 value={patientId}
                 onChange={(e) => setPatientId(e.target.value)}
-                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-hidden font-bold"
+                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none font-semibold shadow-sm"
               >
                 {patients.map(p => (
                   <option key={p.id} value={p.id}>
@@ -233,7 +243,7 @@ export function MedicalRecordEditorModal() {
               <select
                 value={doctorId}
                 onChange={(e) => setDoctorId(e.target.value)}
-                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-hidden font-bold"
+                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none font-semibold shadow-sm"
               >
                 {doctors.map(d => (
                   <option key={d.id} value={d.id}>
@@ -249,13 +259,13 @@ export function MedicalRecordEditorModal() {
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-hidden font-bold"
+                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-200 rounded-lg outline-none font-semibold shadow-sm"
               />
             </div>
           </div>
 
           {/* Vital Signs Row */}
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
+          <div className="bg-slate-50/60 p-3.5 rounded-xl border border-slate-200 space-y-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
               Signos Vitales y Parámetros Clínicos
             </span>
@@ -267,7 +277,7 @@ export function MedicalRecordEditorModal() {
                   placeholder="120/80"
                   value={vitalSigns.bloodPressure || ''}
                   onChange={(e) => setVitalSigns({ ...vitalSigns, bloodPressure: e.target.value })}
-                  className="w-full p-1.5 text-xs bg-slate-50 border rounded-lg font-bold text-slate-800"
+                  className="w-full p-1.5 text-xs bg-white border border-slate-200 rounded-lg font-semibold text-slate-800"
                 />
               </div>
               <div>
@@ -277,7 +287,7 @@ export function MedicalRecordEditorModal() {
                   placeholder="72"
                   value={vitalSigns.heartRate || ''}
                   onChange={(e) => setVitalSigns({ ...vitalSigns, heartRate: e.target.value })}
-                  className="w-full p-1.5 text-xs bg-slate-50 border rounded-lg font-bold text-slate-800"
+                  className="w-full p-1.5 text-xs bg-white border border-slate-200 rounded-lg font-semibold text-slate-800"
                 />
               </div>
               <div>
@@ -287,7 +297,7 @@ export function MedicalRecordEditorModal() {
                   placeholder="36.5"
                   value={vitalSigns.temperature || ''}
                   onChange={(e) => setVitalSigns({ ...vitalSigns, temperature: e.target.value })}
-                  className="w-full p-1.5 text-xs bg-slate-50 border rounded-lg font-bold text-slate-800"
+                  className="w-full p-1.5 text-xs bg-white border border-slate-200 rounded-lg font-semibold text-slate-800"
                 />
               </div>
               <div>
@@ -297,7 +307,7 @@ export function MedicalRecordEditorModal() {
                   placeholder="98"
                   value={vitalSigns.oxygenSat || ''}
                   onChange={(e) => setVitalSigns({ ...vitalSigns, oxygenSat: e.target.value })}
-                  className="w-full p-1.5 text-xs bg-slate-50 border rounded-lg font-bold text-slate-800"
+                  className="w-full p-1.5 text-xs bg-white border border-slate-200 rounded-lg font-semibold text-slate-800"
                 />
               </div>
               <div>
@@ -307,7 +317,7 @@ export function MedicalRecordEditorModal() {
                   placeholder="90"
                   value={vitalSigns.bloodGlucose || ''}
                   onChange={(e) => setVitalSigns({ ...vitalSigns, bloodGlucose: e.target.value })}
-                  className="w-full p-1.5 text-xs bg-slate-50 border rounded-lg font-bold text-slate-800"
+                  className="w-full p-1.5 text-xs bg-white border border-slate-200 rounded-lg font-semibold text-slate-800"
                 />
               </div>
             </div>
@@ -366,6 +376,10 @@ export function MedicalRecordEditorModal() {
             specialtySlug={selectedDoctor?.specialtySlug}
             data={specialtyData}
             onChange={(newData) => setSpecialtyData(newData)}
+            patient={selectedPatient}
+            doctor={selectedDoctor}
+            onPrintBudget={(budget) => openDentalPrint('presupuesto', budget)}
+            onPrintConsent={() => openDentalPrint('consentimiento')}
           />
 
           {/* Treatment Plan */}
@@ -457,7 +471,7 @@ export function MedicalRecordEditorModal() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2.5 text-xs font-black text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-xl shadow-md transition-all flex items-center gap-1.5"
+              className="px-5 py-2.5 bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold text-xs rounded-xl flex items-center gap-2 transition-colors shadow-sm border border-amber-300 disabled:opacity-50"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>{isSubmitting ? 'Guardando...' : 'Guardar en Historia Clínica'}</span>

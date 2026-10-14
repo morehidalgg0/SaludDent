@@ -4,12 +4,21 @@ import { KinesiologyModule } from './KinesiologyModule.jsx';
 import { NutritionModule } from './NutritionModule.jsx';
 import { Eye, Brain, Baby, HeartPulse, CheckSquare } from 'lucide-react';
 
-export function SpecialtyDynamicModule({ specialtySlug, data = {}, onChange }) {
+export function SpecialtyDynamicModule({ specialtySlug, data = {}, onChange, patient, doctor, onPrintBudget, onPrintConsent }) {
   // Normalize slug
   const slug = (specialtySlug || '').toLowerCase();
 
   if (slug.includes('odonto')) {
-    return <OdontologyModule data={data} onChange={onChange} />;
+    return (
+      <OdontologyModule
+        data={data}
+        onChange={onChange}
+        patient={patient}
+        doctor={doctor}
+        onPrintBudget={onPrintBudget}
+        onPrintConsent={onPrintConsent}
+      />
+    );
   }
 
   if (slug.includes('kinesio') || slug.includes('fisio')) {

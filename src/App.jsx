@@ -41,6 +41,7 @@ import { PatientPortalView } from './components/portal/PatientPortalView.jsx';
 import { MedicalRecordsView } from './components/medical_records/MedicalRecordsView.jsx';
 import { MedicalRecordEditorModal } from './components/medical_records/MedicalRecordEditorModal.jsx';
 import { PrescriptionPrintModal } from './components/medical_records/PrescriptionPrintModal.jsx';
+import { DentalPrintModal } from './components/medical_records/DentalPrintModal.jsx';
 
 // Waiting Room
 import { WaitingRoomView } from './components/waiting_room/WaitingRoomView.jsx';
@@ -159,6 +160,7 @@ function MainAppContent() {
       <WhatsAppBatchModal />
       <MedicalRecordEditorModal />
       <PrescriptionPrintModal />
+      <DentalPrintModal />
       <PlanCheckoutModal />
 
       {/* Live Toast Container */}
