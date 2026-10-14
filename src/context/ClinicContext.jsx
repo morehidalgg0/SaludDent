@@ -43,6 +43,7 @@ export function ClinicProvider({ children }) {
   const [daysSummaries, setDaysSummaries] = useState({});
   const [medicalRecords, setMedicalRecords] = useState([]);
   const [subscription, setSubscription] = useState(null);
+  const [timeBlocks, setTimeBlocks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
 
@@ -61,6 +62,7 @@ export function ClinicProvider({ children }) {
     medicalRecordEditor: { isOpen: false, patient: null, doctor: null, record: null },
     prescriptionPrint: { isOpen: false, record: null, type: 'receta' },
     dentalPrint: { isOpen: false, type: 'presupuesto', budget: null, patient: null, doctor: null, date: null },
+    timeBlock: { isOpen: false, prefill: {} },
     planCheckout: { isOpen: false, plan: null },
     registerClinicModal: { isOpen: false },
     loginModal: { isOpen: false },
@@ -185,6 +187,12 @@ export function ClinicProvider({ children }) {
         api.getDaySummary(selectedDate),
         api.getDaysSummaries(startDate, endDate)
       ]);
+      try {
+        const blocks = await api.getTimeBlocks({ startDate, endDate });
+        setTimeBlocks(blocks);
+      } catch (e) {
+        setTimeBlocks([]);
+      }
 
       setAppointments(apts);
       setDaySummary(daySum);
@@ -496,6 +504,21 @@ export function ClinicProvider({ children }) {
     return updated;
   };
 
+  const createTimeBlock = async (blockData) => {
+    const created = await api.createTimeBlock(blockData);
+    await loadAppointments();
+    return created;
+  };
+  const updateTimeBlock = async (id, updateData) => {
+    const updated = await api.updateTimeBlock(id, updateData);
+    await loadAppointments();
+    return updated;
+  };
+  const deleteTimeBlock = async (id) => {
+    await api.deleteTimeBlock(id);
+    await loadAppointments();
+  };
+
   return (
     <ClinicContext.Provider value={{
       currentSection,
@@ -542,17 +565,21 @@ export function ClinicProvider({ children }) {
       updatePatient,
       deletePatient,
       importPatients,
-      importAppointments,
-      createAppointment,
-      updateAppointment,
-      deleteAppointment,
-      quickChangeStatus,
-      sendWhatsappReminder,
-      sendWhatsappBatch,
-      simulatePatientAction,
-      changeSubscriptionPlan,
-      cancelSubscription
-    }}>
+    importAppointments,
+    createAppointment,
+    updateAppointment,
+    deleteAppointment,
+    quickChangeStatus,
+    sendWhatsappReminder,
+    sendWhatsappBatch,
+    simulatePatientAction,
+    changeSubscriptionPlan,
+    cancelSubscription,
+    timeBlocks,
+    createTimeBlock,
+    updateTimeBlock,
+    deleteTimeBlock
+  }}>
       {children}
     </ClinicContext.Provider>
   );

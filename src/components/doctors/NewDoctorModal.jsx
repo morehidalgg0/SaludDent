@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useClinic } from '../../context/ClinicContext.jsx';
+import { specialtyToSlug } from '../../constants/specialties.js';
 import { X, Stethoscope, User, Phone, Mail, Award, Clock } from 'lucide-react';
 
 export function NewDoctorModal() {
@@ -53,10 +54,11 @@ export function NewDoctorModal() {
     setIsSubmitting(true);
 
     try {
+      const payload = { ...formData, specialtySlug: specialtyToSlug(formData.specialty) };
       if (existingDoctor) {
-        await updateDoctor(existingDoctor.id, formData);
+        await updateDoctor(existingDoctor.id, payload);
       } else {
-        await createDoctor(formData);
+        await createDoctor(payload);
       }
       closeModal('newDoctor');
     } catch (err) {

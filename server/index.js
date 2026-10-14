@@ -10,7 +10,8 @@ import {
   getDaySummary, getDaysSummaries,
   getMedicalRecords, getMedicalRecordById, createMedicalRecord, updateMedicalRecord,
   addWhatsappLog, getWhatsappLogs,
-  getSubscription, changePlan, cancelSubscription, getInsightsSnapshot
+  getSubscription, changePlan, cancelSubscription, getInsightsSnapshot,
+  getTimeBlocks, createTimeBlock, updateTimeBlock, deleteTimeBlock
 } from './db.js';
 import { clinicalAssist, clinicInsights } from './ai.js';
 import { helpAssistant } from './gemini.js';
@@ -332,6 +333,38 @@ app.put('/api/medical-records/:id', async (req, res) => {
 });
 
 // --- SUBSCRIPTION ---
+app.get('/api/blocks', async (req, res) => {
+  try {
+    const { startDate, endDate, doctorId } = req.query;
+    res.json({ success: true, data: await getTimeBlocks({ startDate, endDate, doctorId }) });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.post('/api/blocks', async (req, res) => {
+  try {
+    const b = await createTimeBlock(req.body);
+    broadcastEvent('BLOCK_CREATED', b, { title: 'Horario Bloqueado', message: `Se bloqueó ${b.reason || 'un horario'}` });
+    res.status(201).json({ success: true, data: b });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.put('/api/blocks/:id', async (req, res) => {
+  try {
+    const updated = await updateTimeBlock(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ success: false, error: 'Bloqueo no encontrado' });
+    broadcastEvent('BLOCK_UPDATED', updated, { title: 'Bloqueo Actualizado', message: 'El bloqueo fue modificado' });
+    res.json({ success: true, data: updated });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+app.delete('/api/blocks/:id', async (req, res) => {
+  try {
+    await deleteTimeBlock(req.params.id);
+    broadcastEvent('BLOCK_DELETED', { id: req.params.id }, { title: 'Bloqueo Eliminado', message: 'El bloqueo fue liberado' });
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
 app.get('/api/subscription', async (req, res) => {
   try { res.json({ success: true, data: await getSubscription() }); }
   catch (err) { res.status(500).json({ success: false, error: err.message }); }

@@ -34,7 +34,7 @@ export function DailyView() {
           
           {/* Header Row: Doctors Columns */}
           <div className="grid grid-cols-[80px_repeat(auto-fit,minmax(220px,1fr))] bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
-            <div className="p-2.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center border-r border-slate-200 flex items-center justify-center">
+            <div className="p-1.5 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center border-r border-slate-200 flex items-center justify-center">
               <Clock className="w-3.5 h-3.5 mr-1 text-slate-400" />
               Hora
             </div>
@@ -42,7 +42,7 @@ export function DailyView() {
               const docAppts = appointmentsByDoctor[doc.id] || [];
               const overturnsCount = docAppts.filter(a => a.isOverturn).length;
               return (
-                <div key={doc.id} className="p-2.5 border-r border-slate-200 last:border-r-0">
+                <div key={doc.id} className="p-1.5 border-r border-slate-200 last:border-r-0">
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <h3 className="font-bold text-xs text-slate-900 truncate">{doc.name}</h3>
@@ -78,7 +78,7 @@ export function DailyView() {
                   }`}
                 >
                   {/* Time Label (15-min interval) */}
-                  <div className={`p-2 text-center text-xs border-r border-slate-200 flex items-center justify-center ${
+                  <div className={`px-1 py-0.5 text-center text-[11px] border-r border-slate-200 flex items-center justify-center tabular-nums ${
                     isHour ? 'text-slate-900 font-bold bg-slate-100/60' : 'text-slate-400 font-normal'
                   }`}>
                     {slot}
@@ -87,33 +87,14 @@ export function DailyView() {
                   {/* Doctor Columns for this 15-min slot */}
                   {filteredDoctors.map(doc => {
                     const slotAppts = (appointmentsByDoctor[doc.id] || []).filter(a => a.time === slot);
+                    const activeSlotAppts = slotAppts.filter(a => a.status !== 'cancelled');
 
                     return (
                       <div 
                         key={doc.id}
-                        className="p-1 border-r border-slate-100 last:border-r-0 min-h-[46px] relative group flex flex-col gap-1.5"
+                        className="px-0.5 py-0.5 border-r border-slate-100 last:border-r-0 min-h-[24px] relative group flex flex-col gap-0.5"
                       >
-                        {slotAppts.length > 0 ? (
-                          <>
-                            {slotAppts.map(apt => (
-                              <AppointmentCard key={apt.id} appointment={apt} compact={slotAppts.length > 1} />
-                            ))}
-                            <button
-                              onClick={() => openModal('newAppointment', {
-                                prefill: {
-                                  date: selectedDate,
-                                  time: slot,
-                                  doctorId: doc.id,
-                                  isOverturn: true
-                                }
-                              })}
-                              className="w-full py-1 rounded border border-dashed border-amber-300 hover:border-amber-500 hover:bg-amber-50 text-amber-600 hover:text-amber-800 flex items-center justify-center gap-1 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-all"
-                            >
-                              <Plus className="w-3 h-3" />
-                              <span>Sobreturno</span>
-                            </button>
-                          </>
-                        ) : (
+                        {slotAppts.length === 0 ? (
                           /* Empty slot - Clickable to schedule */
                           <button
                             onClick={() => openModal('newAppointment', {
@@ -123,11 +104,47 @@ export function DailyView() {
                                 doctorId: doc.id
                               }
                             })}
-                            className="w-full h-full min-h-[32px] rounded border border-transparent hover:border-slate-300 hover:bg-slate-50 text-slate-300 hover:text-slate-700 flex items-center justify-center gap-1 text-[11px] font-medium opacity-0 group-hover:opacity-100 transition-all"
+                            className="w-full h-full min-h-[18px] rounded border border-transparent hover:border-slate-300 hover:bg-slate-50 text-slate-300 hover:text-slate-700 flex items-center justify-center gap-1 text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-all"
                           >
                             <Plus className="w-3 h-3" />
                             <span>Agendar {slot}</span>
                           </button>
+                        ) : (
+                          <>
+                            {slotAppts.map(apt => (
+                              <AppointmentCard key={apt.id} appointment={apt} compact={slotAppts.length > 1} />
+                            ))}
+                            {activeSlotAppts.length > 0 ? (
+                              <button
+                                onClick={() => openModal('newAppointment', {
+                                  prefill: {
+                                    date: selectedDate,
+                                    time: slot,
+                                    doctorId: doc.id,
+                                    isOverturn: true
+                                  }
+                                })}
+                                className="w-full py-0.5 rounded border border-dashed border-amber-300 hover:border-amber-500 hover:bg-amber-50 text-amber-600 hover:text-amber-800 flex items-center justify-center gap-1 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-all"
+                              >
+                                <Plus className="w-3 h-3" />
+                                <span>Sobreturno</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => openModal('newAppointment', {
+                                  prefill: {
+                                    date: selectedDate,
+                                    time: slot,
+                                    doctorId: doc.id
+                                  }
+                                })}
+                                className="w-full py-0.5 rounded border border-dashed border-emerald-300 hover:border-emerald-500 hover:bg-emerald-50 text-emerald-600 hover:text-emerald-800 flex items-center justify-center gap-1 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-all"
+                              >
+                                <Plus className="w-3 h-3" />
+                                <span>Agendar (slot libre)</span>
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
                     );

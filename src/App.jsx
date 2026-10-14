@@ -42,6 +42,7 @@ import { MedicalRecordsView } from './components/medical_records/MedicalRecordsV
 import { MedicalRecordEditorModal } from './components/medical_records/MedicalRecordEditorModal.jsx';
 import { PrescriptionPrintModal } from './components/medical_records/PrescriptionPrintModal.jsx';
 import { DentalPrintModal } from './components/medical_records/DentalPrintModal.jsx';
+import { TimeBlockModal } from './components/modals/TimeBlockModal.jsx';
 
 // Waiting Room
 import { WaitingRoomView } from './components/waiting_room/WaitingRoomView.jsx';
@@ -161,6 +162,7 @@ function MainAppContent() {
       <MedicalRecordEditorModal />
       <PrescriptionPrintModal />
       <DentalPrintModal />
+      <TimeBlockModal />
       <PlanCheckoutModal />
 
       {/* Live Toast Container */}

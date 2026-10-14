@@ -53,6 +53,7 @@ export function MedicalRecordEditorModal() {
   ]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [aiBusy, setAiBusy] = useState(null);
 
   useEffect(() => {
     if (initRecord) {
@@ -82,7 +83,6 @@ export function MedicalRecordEditorModal() {
 
   const selectedDoctor = doctors.find(d => d.id === doctorId) || doctors[0];
 
-  const [aiBusy, setAiBusy] = useState(null);
   const runAi = async (mode, sourceText, setter) => {
     setAiBusy(mode);
     try {

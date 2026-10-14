@@ -148,7 +148,31 @@ export function HomeView() {
   // --- LANDING PAGE VIEW (when NOT registered) ---
   return (
     <div className="space-y-8 py-2">
-      
+
+      {/* 0. RETURNING USER QUICK LOGIN (only if a clinic is already registered) */}
+      {clinic?.email && (
+        <div className="bg-slate-900 text-white rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 max-w-4xl mx-auto">
+          <div className="flex items-center gap-3 text-center sm:text-left">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
+              <LogIn className="w-5 h-5 text-emerald-400" />
+            </div>
+            <div>
+              <h2 className="font-bold text-base">¿Ya tenés tu clínica en SaludConnect?</h2>
+              <p className="text-xs text-slate-400">
+                Ingresá a <span className="font-semibold text-slate-200">{clinic.name}</span> con tu email y contraseña.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => openModal('loginModal')}
+            className="px-5 py-2.5 text-sm font-bold text-slate-900 bg-white hover:bg-slate-100 rounded-xl transition-colors shrink-0 flex items-center gap-2"
+          >
+            <LogIn className="w-4 h-4" />
+            <span>Iniciar Sesión</span>
+          </button>
+        </div>
+      )}
+
       {/* 1. HERO SECTION */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-10 shadow-2xs text-center max-w-4xl mx-auto space-y-5">
         

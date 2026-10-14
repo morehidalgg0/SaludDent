@@ -26,6 +26,7 @@ model Clinic {
   medicalRecord MedicalRecord[]
   whatsappLog WhatsAppLog[]
   subscription Subscription?
+  timeBlock   TimeBlock[]
 
   @@map("clinic")
 }
@@ -113,6 +114,23 @@ model Appointment {
   patient    Patient? @relation(fields: [patientId], references: [id])
 
   @@map("appointment")
+}
+
+model TimeBlock {
+  id        String   @id @default(cuid())
+  date      String
+  startTime String   @default("")
+  endTime   String   @default("")
+  allDay    Boolean  @default(false)
+  reason    String   @default("")
+  doctorId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clinicId String
+  clinic   Clinic @relation(fields: [clinicId], references: [id])
+
+  @@map("time_block")
 }
 
 model MedicalRecord {

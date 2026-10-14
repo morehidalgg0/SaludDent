@@ -1,5 +1,6 @@
 import { PrismaClient } from '../src/generated/prisma/client.ts';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { specialtyToSlug } from '../src/constants/specialties.js';
 import crypto from 'crypto';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
@@ -171,7 +172,7 @@ export async function createDoctor(doctorData) {
     data: {
       name: doctorData.name || 'Nuevo Profesional',
       specialty: doctorData.specialty || 'Medicina General',
-      specialtySlug: doctorData.specialtySlug || 'medicina_general',
+      specialtySlug: doctorData.specialtySlug || specialtyToSlug(doctorData.specialty),
       license: doctorData.license || '',
       phone: doctorData.phone || '',
       email: doctorData.email || '',
@@ -185,7 +186,9 @@ export async function createDoctor(doctorData) {
 
 export async function updateDoctor(id, doctorData) {
   try {
-    return await prisma.doctor.update({ where: { id }, data: doctorData });
+    const data = { ...doctorData };
+    if (!data.specialtySlug && data.specialty) data.specialtySlug = specialtyToSlug(data.specialty);
+    return await prisma.doctor.update({ where: { id }, data });
   } catch {
     return null;
   }
@@ -548,6 +551,54 @@ export async function updateAppointment(id, updateData) {
 export async function deleteAppointment(id) {
   try {
     await prisma.appointment.delete({ where: { id } });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// --- TIME BLOCKS (Bloqueos de horarios/días) ---
+export async function getTimeBlocks({ startDate, endDate, doctorId } = {}) {
+  const clinic = await prisma.clinic.findFirst();
+  if (!clinic) return [];
+  const where = { clinicId: clinic.id };
+  if (startDate && endDate) {
+    where.date = { gte: startDate, lte: endDate };
+  } else if (startDate) {
+    where.date = startDate;
+  }
+  if (doctorId && doctorId !== 'all') where.doctorId = doctorId;
+  const blocks = await prisma.timeBlock.findMany({ where });
+  return blocks;
+}
+
+export async function createTimeBlock(blockData) {
+  const clinic = await prisma.clinic.findFirst();
+  if (!clinic) throw new Error('No hay clínica registrada');
+  return prisma.timeBlock.create({
+    data: {
+      date: blockData.date,
+      startTime: blockData.startTime || '',
+      endTime: blockData.endTime || '',
+      allDay: Boolean(blockData.allDay),
+      reason: blockData.reason || '',
+      doctorId: blockData.doctorId || null,
+      clinicId: clinic.id
+    }
+  });
+}
+
+export async function updateTimeBlock(id, updateData) {
+  try {
+    return await prisma.timeBlock.update({ where: { id }, data: updateData });
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteTimeBlock(id) {
+  try {
+    await prisma.timeBlock.delete({ where: { id } });
     return true;
   } catch {
     return false;

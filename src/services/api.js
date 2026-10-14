@@ -230,6 +230,41 @@ export const api = {
     return res.json();
   },
 
+  // --- TIME BLOCKS ---
+  async getTimeBlocks({ startDate, endDate, doctorId } = {}) {
+    const params = new URLSearchParams();
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    if (doctorId && doctorId !== 'all') params.append('doctorId', doctorId);
+    const res = await fetch(`${API_BASE}/blocks?${params.toString()}`);
+    const json = await res.json();
+    return json.data || [];
+  },
+  async createTimeBlock(blockData) {
+    const res = await fetch(`${API_BASE}/blocks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(blockData)
+    });
+    const json = await res.json();
+    return json.data;
+  },
+  async updateTimeBlock(id, updateData) {
+    const res = await fetch(`${API_BASE}/blocks/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updateData)
+    });
+    const json = await res.json();
+    return json.data;
+  },
+  async deleteTimeBlock(id) {
+    const res = await fetch(`${API_BASE}/blocks/${id}`, {
+      method: 'DELETE'
+    });
+    return res.json();
+  },
+
   // --- WHATSAPP & REALTIME ACTIONS ---
   async sendWhatsappReminderSingle(appointmentId) {
     const res = await fetch(`${API_BASE}/whatsapp/reminders/send-single`, {

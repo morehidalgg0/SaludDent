@@ -7,7 +7,15 @@ import {
   Filter,
   FileSpreadsheet
 } from 'lucide-react';
-import { formatHumanDate, formatDateISO, parseDateISO } from '../../utils/dateUtils.js';
+import {
+  formatHumanDate,
+  formatDateISO,
+  parseDateISO,
+  formatShortDate,
+  getWeekDays,
+  getBiweeklyDays,
+  getMonthDays
+} from '../../utils/dateUtils.js';
 
 export function AgendaViewHeader() {
   const { 
@@ -20,6 +28,35 @@ export function AgendaViewHeader() {
     setSelectedDoctorId,
     openModal
   } = useClinic();
+
+  const todayISO = formatDateISO(new Date());
+  const now = new Date();
+
+  // Compute the visible range + context label for the current view
+  let rangeText = formatHumanDate(selectedDate);
+  let currentLabel = 'Hoy';
+  let isCurrentPeriod = selectedDate === todayISO;
+
+  if (agendaView === 'semanal') {
+    const days = getWeekDays(selectedDate);
+    const start = days[0];
+    const end = days[6];
+    isCurrentPeriod = days.includes(todayISO);
+    currentLabel = isCurrentPeriod ? 'Esta semana' : `${formatShortDate(start)} – ${formatShortDate(end)}`;
+    rangeText = `${formatHumanDate(start, false)} – ${formatHumanDate(end)}`;
+  } else if (agendaView === 'quincenal') {
+    const days = getBiweeklyDays(selectedDate);
+    const start = days[0];
+    const end = days[days.length - 1];
+    isCurrentPeriod = start === todayISO;
+    currentLabel = isCurrentPeriod ? 'Próximos 15 días' : `${formatShortDate(start)} – ${formatShortDate(end)}`;
+    rangeText = `${formatHumanDate(start, false)} – ${formatHumanDate(end)}`;
+  } else if (agendaView === 'mensual') {
+    const month = getMonthDays(selectedDate);
+    isCurrentPeriod = month.month === now.getMonth() && month.year === now.getFullYear();
+    currentLabel = isCurrentPeriod ? 'Este mes' : `${month.monthName} ${month.year}`;
+    rangeText = `${month.monthName} ${month.year}`;
+  }
 
   const handlePrev = () => {
     const cur = parseDateISO(selectedDate);
@@ -78,9 +115,14 @@ export function AgendaViewHeader() {
             </button>
             <button
               onClick={handleToday}
-              className="px-2.5 py-1 text-xs font-semibold text-slate-700 hover:text-slate-950 hover:bg-white rounded transition-colors"
+              className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors whitespace-nowrap ${
+                isCurrentPeriod
+                  ? 'text-slate-700 hover:text-slate-950 hover:bg-white'
+                  : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200'
+              }`}
+              title="Ir al período actual"
             >
-              Hoy
+              {currentLabel}
             </button>
             <button
               onClick={handleNext}
@@ -98,8 +140,8 @@ export function AgendaViewHeader() {
             className="px-2.5 py-1 text-xs font-semibold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg outline-hidden"
           />
 
-          <span className="text-sm font-semibold text-slate-800 hidden sm:inline ml-1">
-            {formatHumanDate(selectedDate)}
+          <span className="text-sm font-bold text-slate-800 hidden sm:inline ml-1 capitalize">
+            {rangeText}
           </span>
         </div>
 
