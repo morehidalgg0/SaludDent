@@ -82,7 +82,7 @@ export function Navbar() {
             onClick={() => setCurrentSection('home')}
             title="Ir a la página de Inicio"
           >
-            <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white font-bold text-sm">
+            <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-white font-bold text-sm shadow-sm">
               <Activity className="w-4 h-4 text-emerald-400" />
             </div>
             <div>
@@ -224,7 +224,7 @@ export function Navbar() {
       {/* BOTTOM ROW: HORIZONTAL TABS MENU */}
       <div className="border-t border-slate-100 bg-slate-50/70">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 overflow-x-auto">
-          <nav className="flex items-center gap-1 py-1 min-w-max">
+          <nav className="flex items-center gap-1.5 py-1.5 min-w-max">
             {navTabs.map(tab => {
               const Icon = tab.icon;
               const isActive = currentSection === tab.id;
@@ -232,10 +232,10 @@ export function Navbar() {
                 <button
                   key={tab.id}
                   onClick={() => setCurrentSection(tab.id)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold transition-all shrink-0 ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
                     isActive
-                      ? 'bg-white text-slate-950 border border-slate-200/90 shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                      ? 'bg-white text-slate-950 border border-slate-200/80 shadow-sm font-bold ring-1 ring-slate-950/5'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
                   }`}
                 >
                   <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-slate-900' : 'text-slate-400'}`} />
