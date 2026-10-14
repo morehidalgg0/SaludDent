@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 export function HomeView() {
-  const { isLoggedIn, setCurrentSection, openModal, doctors, patients, appointments, subscription, daySummary } = useClinic();
+  const { isLoggedIn, setCurrentSection, openModal, doctors, patients, appointments, subscription, daySummary, clinic } = useClinic();
 
   // --- DASHBOARD VIEW (when logged in) ---
   if (isLoggedIn) {
