@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 
-const MODEL = 'gemini-3.8-flash';
+const MODELS = ['gemini-3.8-flash', 'gemini-flash-latest'];
 const MAX_QUESTION_CHARS = 1500;
 const MAX_HISTORY_TURNS = 10;
 
@@ -11,6 +11,38 @@ function getClient() {
   }
   client ||= new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   return client;
+}
+
+// Classifies a Gemini API error so the caller can decide whether to retry,
+// try the next model, or give up. `@google/genai` surfaces the raw API body in
+// `err.message` (a JSON string), so we match on the text.
+function classifyError(err) {
+  const s = String(err?.message || err || '');
+  if (/503|UNAVAILABLE|high demand|overload/i.test(s)) return 'retry';
+  if (/429|RESOURCE_EXHAUSTED|rate limit|quota/i.test(s)) return 'retry';
+  if (/404|NOT_FOUND|no longer available|not found/i.test(s)) return 'next';
+  return 'fatal';
+}
+
+async function generate(contents) {
+  const ai = getClient();
+  const config = { systemInstruction: SYSTEM, temperature: 0.4, maxOutputTokens: 1200 };
+
+  for (const model of MODELS) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const res = await ai.models.generateContent({ model, contents, config });
+        return (res.text || '').trim();
+      } catch (err) {
+        const kind = classifyError(err);
+        if (kind === 'fatal') throw err;
+        if (kind === 'next') break;
+        if (attempt === 0) await new Promise(r => setTimeout(r, 500));
+      }
+    }
+  }
+
+  throw new Error('El asistente está con mucha demanda en este momento. Esperá unos segundos y volvé a intentar.');
 }
 
 const SYSTEM = `Sos el asistente de ayuda de "SaludConnect", un sistema de gestión clínica y turnos para consultorios y clínicas de Argentina.
@@ -55,6 +87,94 @@ Módulos del sistema y cómo usarlos:
 
 Si el usuario pregunta por la ubicación de algo, guialo por la barra de pestañas superior (Inicio, Agenda de Turnos, Fichero de Pacientes, Historias Clínicas, Notificaciones WhatsApp, Sala de Espera, Planes & Suscripción).`;
 
+// Offline fallback: canned answers for the most common questions, used when Gemini
+// is unavailable (saturated, missing API key, network error) so the assistant always
+// answers something useful.
+const LOCAL_FAQ = [
+  {
+    keywords: ['agendar turno', 'agendar', 'agenda', 'nuevo turno', 'sacar turno', 'reservar turno', 'turno', 'cita', 'programar'],
+    answer: 'Para agendar un turno: entrá a **Agenda de Turnos** y usá el botón **"Agendar Turno"** (arriba a la derecha), o hacé clic en un horario libre de la grilla.\n\nElegí paciente, profesional, fecha, hora y duración (15, 30, 45, 60, 90 o 120 min). Si el horario ya está ocupado, el sistema te ofrece cargarlo como **sobreturno**.'
+  },
+  {
+    keywords: ['importar paciente', 'import', 'excel', 'csv', 'xlsx', 'planilla', 'cargar paciente'],
+    answer: 'Para importar pacientes: entrá a **Fichero de Pacientes**, tocá el botón **"Importar"** y subí un archivo **CSV o Excel (.xlsx / .xls)**.\n\nMapeá las columnas, revisá la vista previa y confirmá. No hay límite de pacientes (se cargan por lotes) y se evitan duplicados por DNI o N° de Fichero. Admite fichas sin DNI.'
+  },
+  {
+    keywords: ['whatsapp', 'recordatorio', 'mensaje', 'confirmar turno', 'cancelar turno', 'notificacion', 'aviso', 'enviar whatsapp'],
+    answer: 'Para enviar recordatorios por WhatsApp: entrá a **Notificaciones WhatsApp** y usá **"Enviar recordatorio"** en un turno, o el **Envío masivo** por fecha.\n\nEl paciente recibe botones **[Aceptar Turno]** y **[Cancelar Turno]**; su respuesta impacta en la agenda en tiempo real. Si querés probarlo, usá el **Simulador de interacción**.'
+  },
+  {
+    keywords: ['historia clinica', 'odontograma', 'evolucion', 'ficha clinica', 'receta', 'certificado', 'ehr', 'historia'],
+    answer: 'Para crear una historia clínica: entrá a **Historias Clínicas**, buscá al paciente y creá un registro nuevo eligiendo la especialidad.\n\nCada especialidad tiene su módulo (odontograma, mapa de dolor, IMC, Snellen, etc.). Desde ahí podés **imprimir recetas y certificados**, y usar la IA para mejorar la redacción, resumir o sugerir un plan.'
+  },
+  {
+    keywords: ['nuevo paciente', 'crear paciente', 'alta paciente', 'agregar paciente', 'registrar paciente'],
+    answer: 'Para dar de alta un paciente: usá el botón **"Nuevo Paciente"** en la barra superior (o desde el Fichero de Pacientes).\n\nCompletá los datos y guardá: el sistema le asigna automáticamente un **N° de Fichero correlativo** (ej. F-10240).'
+  },
+  {
+    keywords: ['buscar paciente', 'numero de fichero', 'encontrar paciente', 'buscar fichero', 'fichero'],
+    answer: 'Para buscar un paciente: usá el **buscador global** de la barra superior. Podés buscar por **N° de Fichero, DNI, nombre, teléfono u obra social**.\n\nAl hacer clic en un resultado se abre su ficha completa.'
+  },
+  {
+    keywords: ['sobreturno', 'sobreturnos', 'turno urgente'],
+    answer: 'Los **sobreturnos** son turnos urgentes que se agendan sobre un horario ya ocupado, en paralelo, sin romper la grilla.\n\nAl agendar sobre un horario ocupado el sistema te ofrece cargarlo como sobreturno y queda resaltado en la agenda.'
+  },
+  {
+    keywords: ['sala de espera', 'recepcion', 'llego el paciente', 'monitor de flujo'],
+    answer: 'La **Sala de Espera** muestra el flujo en vivo: Por Llegar, En Sala de Espera (con contador de tiempo), En Consulta y Atendidos.\n\nSirve para recepción y para saber cuánto espera cada paciente.'
+  },
+  {
+    keywords: ['profesional', 'medico', 'doctor', 'agregar medico', 'odontologo', 'especialidad', 'consultorio'],
+    answer: 'Para agregar un profesional: entrá a la gestión de **Profesionales** y creá uno nuevo con su **especialidad, consultorio, matrícula, color e intervalo base**.\n\nLos profesionales aparecen en la agenda y en los filtros de la cabecera.'
+  },
+  {
+    keywords: ['suscripcion', 'plan', 'planes', 'facturacion', 'cambiar plan', 'pago', 'precio', 'costo'],
+    answer: 'En **Planes & Suscripción** podés ver tu plan actual (Básico, Profesional o Corporativo), **cambiar de plan**, administrar el método de pago y ver la facturación.'
+  },
+  {
+    keywords: ['resumen inteligente', 'insight', 'asistente', 'redactar', 'resumir texto', 'ia'],
+    answer: 'La IA está integrada en dos lugares:\n- **Resumen inteligente** (en Inicio): analiza tus próximos 14 días y los últimos 30 con cifras agregadas.\n- **Asistencia clínica** (en el editor de historia clínica): mejora la redacción, resume o sugiere un plan.\n\nY este mismo **Asistente IA** te responde dudas sobre cómo usar el sistema.'
+  },
+  {
+    keywords: ['importar citas', 'dentalink', 'importar turnos', 'importar agenda'],
+    answer: 'Para importar citas: entrá a **Agenda de Turnos** y usá el botón de importar. Acepta el export de **Dentalink (Agenda de Citas)**.\n\nEl sistema vincula las citas con los pacientes y profesionales existentes.'
+  },
+  {
+    keywords: ['contrasena', 'iniciar sesion', 'registrar clinica', 'cuenta', 'usuario', 'clave', 'login'],
+    answer: 'Para acceder: usá **"Iniciar Sesión"** con el email y la contraseña de la clínica. Si todavía no tenés cuenta, tocá **"Registrar Clínica"** para crear una (incluye 14 días de prueba).'
+  }
+];
+
+const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+function kwRegex(keyword) {
+  const esc = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // Prefix match anchored at a word start, so "import" matches "importo"/"importar"
+  // but "turno" does NOT match inside "sobreturno".
+  return new RegExp(`(?:^|[^a-z0-9])${esc}`, 'i');
+}
+
+function localAnswer(question) {
+  const q = norm(question);
+  let best = null;
+  let bestScore = 0;
+
+  for (const item of LOCAL_FAQ) {
+    let score = 0;
+    for (const kw of item.keywords) {
+      if (kwRegex(norm(kw)).test(q)) score += kw.includes(' ') ? 3 : 1;
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      best = item;
+    }
+  }
+
+  if (best) return best.answer;
+
+  return 'Puedo ayudarte con el uso del sistema. Probá preguntarme, por ejemplo:\n- ¿Cómo agendo un turno?\n- ¿Cómo importo mis pacientes?\n- ¿Cómo envío recordatorios de WhatsApp?\n- ¿Cómo creo una historia clínica?\n- ¿Cómo cambio de plan?\n\n(El asistente con IA está con mucha demanda ahora; probá de nuevo en unos segundos para respuestas más detalladas.)';
+}
+
 export async function helpAssistant({ question, history = [], context = {} } = {}) {
   const q = (question || '').trim();
   if (!q) throw new Error('Escribí tu consulta para que el asistente pueda ayudarte.');
@@ -68,13 +188,11 @@ export async function helpAssistant({ question, history = [], context = {} } = {
   const where = context.section ? `\n\n(Contexto: el usuario está en la sección "${context.section}" del sistema.)` : '';
   contents.push({ role: 'user', parts: [{ text: q + where }] });
 
-  const res = await getClient().models.generateContent({
-    model: MODEL,
-    contents,
-    config: { systemInstruction: SYSTEM, temperature: 0.4, maxOutputTokens: 1200 }
-  });
-
-  const text = (res.text || '').trim();
-  if (!text) throw new Error('El asistente no devolvió una respuesta. Probá de nuevo.');
-  return text;
+  try {
+    const text = await generate(contents);
+    if (text) return text;
+  } catch {
+    // Gemini unavailable (saturated / no key / network): answer from the local FAQ.
+  }
+  return localAnswer(q);
 }
