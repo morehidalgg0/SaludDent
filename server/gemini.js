@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 
-const MODEL = 'gemini-2.5-flash';
+const MODEL = 'gemini-3.8-flash';
 const MAX_QUESTION_CHARS = 1500;
 const MAX_HISTORY_TURNS = 10;
 
