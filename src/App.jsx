@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useClinic, ClinicProvider } from './context/ClinicContext.jsx';
 import { Navbar } from './components/common/Navbar.jsx';
 import { ToastContainer } from './components/common/ToastContainer.jsx';
+import { AssistantChat } from './components/common/AssistantChat.jsx';
 
 // Home Landing
 import { HomeView } from './components/home/HomeView.jsx';
@@ -162,6 +163,9 @@ function MainAppContent() {
 
       {/* Live Toast Container */}
       <ToastContainer />
+
+      {/* Floating Gemini help assistant */}
+      <AssistantChat />
     </div>
   );
 }

@@ -155,6 +155,17 @@ export const api = {
     return json.data.text;
   },
 
+  async aiAssistant({ question, history, context }) {
+    const res = await fetch(`${API_BASE}/ai/assistant`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, history, context })
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) throw new Error(json.error || 'Error al consultar el asistente');
+    return json.data.text;
+  },
+
   async importAppointments(appointments) {
     const res = await fetch(`${API_BASE}/appointments/import`, {
       method: 'POST',

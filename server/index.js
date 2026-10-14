@@ -13,6 +13,7 @@ import {
   getSubscription, changePlan, cancelSubscription, getInsightsSnapshot
 } from './db.js';
 import { clinicalAssist, clinicInsights } from './ai.js';
+import { helpAssistant } from './gemini.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -365,6 +366,14 @@ app.post('/api/ai/insights', async (req, res) => {
     const snapshot = await getInsightsSnapshot();
     if (!snapshot) return res.status(400).json({ success: false, error: 'No hay clínica registrada.' });
     res.json({ success: true, data: { text: await clinicInsights(snapshot) } });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
+
+// Help assistant (Gemini): answers questions about how to use the system.
+app.post('/api/ai/assistant', async (req, res) => {
+  try {
+    const { question, history, context } = req.body;
+    res.json({ success: true, data: { text: await helpAssistant({ question, history, context }) } });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
