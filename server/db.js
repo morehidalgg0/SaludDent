@@ -11,13 +11,15 @@ function hashPassword(password) {
 }
 
 // Fichero numbers look like "F-10240". Sorting them as text breaks once numbers of
-// different digit-lengths coexist (e.g. imported "F-1".."F-3380" vs "F-10240"), so the
+// different digit-lengths coexist (e.g. imported "F-1".."F-3418" vs "F-10240"), so the
 // next sequence number is computed from the actual numeric max instead of a text ORDER BY.
+// NOTE: there is no artificial floor — the counter continues from the real last number in
+// the fichero, so a clinic that imported F-1..F-3418 keeps going at F-3419 (not F-10240).
 async function getNextFicheroSeq(clinicId) {
   const patients = await prisma.patient.findMany({ where: { clinicId }, select: { ficheroNumber: true } });
-  let max = 10239;
+  let max = 0;
   for (const p of patients) {
-    const n = parseInt((p.ficheroNumber || '').replace('F-', ''), 10);
+    const n = parseInt((p.ficheroNumber || '').replace(/^F-/, ''), 10);
     if (Number.isFinite(n) && n > max) max = n;
   }
   return max;

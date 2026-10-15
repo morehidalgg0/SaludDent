@@ -43,6 +43,10 @@ export function WhatsAppSimulatorModal() {
     if (isOpen) setMessageType(modals.whatsappSimulator.messageType || 'reminder');
   }, [isOpen, modals.whatsappSimulator.messageType]);
 
+  useEffect(() => {
+    if (isOpen && initialAppointment) setSelectedAppointmentId(initialAppointment.id);
+  }, [isOpen, initialAppointment]);
+
   if (!isOpen) return null;
 
   const currentAppointment = appointments.find(a => a.id === selectedAppointmentId) || initialAppointment || appointments[0];
