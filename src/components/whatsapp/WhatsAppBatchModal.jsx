@@ -36,7 +36,7 @@ export function WhatsAppBatchModal() {
     const waWindow = current.patientPhone ? window.open('', '_blank') : null;
     setIsSending(true);
     try {
-      const result = await sendWhatsappReminder(current.id);
+      const result = await sendWhatsappReminder(current.id, 'reminder');
       if (waWindow) waWindow.location.href = result.waLink;
       setSentCount(c => c + 1);
     } catch (err) {
@@ -60,7 +60,7 @@ export function WhatsAppBatchModal() {
               <Send className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm">Envío Masivo de Recordatorios</h3>
+              <h3 className="font-extrabold text-sm">Envío Masivo — Pedir Confirmación</h3>
               <p className="text-[11px] text-slate-300">{date && formatHumanDate(date)}</p>
             </div>
           </div>
@@ -73,7 +73,7 @@ export function WhatsAppBatchModal() {
           {!isDone ? (
             <>
               <p className="text-xs text-slate-500 text-center">
-                Turno {index + 1} de {queue.length} — cada mensaje se abre en WhatsApp para que lo confirmes manualmente.
+                Turno {index + 1} de {queue.length} — se envía el recordatorio con botones [Aceptar / Cancelar] y el link de confirmación.
               </p>
 
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-1.5 text-sm">
@@ -109,7 +109,7 @@ export function WhatsAppBatchModal() {
             <div className="text-center py-4 space-y-3">
               <PartyPopper className="w-10 h-10 text-emerald-500 mx-auto" />
               <p className="font-bold text-slate-900">
-                {queue.length === 0 ? 'No hay turnos para este día.' : `Listo: ${sentCount} de ${queue.length} recordatorios enviados.`}
+                {queue.length === 0 ? 'No hay turnos para este día.' : `Listo: ${sentCount} de ${queue.length} confirmaciones enviadas.`}
               </p>
               <button
                 onClick={handleClose}

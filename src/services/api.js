@@ -266,11 +266,11 @@ export const api = {
   },
 
   // --- WHATSAPP & REALTIME ACTIONS ---
-  async sendWhatsappReminderSingle(appointmentId) {
+  async sendWhatsappReminderSingle(appointmentId, type = 'reminder') {
     const res = await fetch(`${API_BASE}/whatsapp/reminders/send-single`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ appointmentId })
+      body: JSON.stringify({ appointmentId, type })
     });
     const json = await res.json();
     return json.data;

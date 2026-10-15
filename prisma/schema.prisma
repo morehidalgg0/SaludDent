@@ -17,6 +17,9 @@ model Clinic {
   phone       String
   address     String   @default("Sede Principal")
   specialty   String   @default("Policonsultorio")
+  dentistName String   @default("")
+  license     String   @default("")
+  ttc         String   @default("")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

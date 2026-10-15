@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Building2,
   CreditCard,
+  Settings,
   LogIn,
   LogOut
 } from 'lucide-react';
@@ -64,6 +65,7 @@ export function Navbar() {
     { id: 'historias', label: 'Historias Clínicas', icon: FileText, count: null },
     { id: 'whatsapp', label: 'Notificaciones WhatsApp', icon: MessageSquare, count: null },
     { id: 'espera', label: 'Sala de Espera', icon: Building2, count: null },
+    { id: 'configuracion', label: 'Configuración', icon: Settings, count: null },
     { id: 'suscripcion', label: 'Planes & Suscripción', icon: CreditCard, badge: 'SaaS' }
   ];
 

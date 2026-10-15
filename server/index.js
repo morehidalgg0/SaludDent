@@ -233,9 +233,15 @@ app.delete('/api/appointments/:id', async (req, res) => {
 });
 
 // --- WHATSAPP ---
+// Two distinct messages:
+//  - 'notice'   : sent right after an appointment is booked. Informational only, no
+//                 confirmation requested (the patient just needs to know).
+//  - 'reminder' : sent close to / on the appointment date. Asks the patient to confirm
+//                 or cancel via the portal link or the 1/2 reply options.
 app.post('/api/whatsapp/reminders/send-single', async (req, res) => {
   try {
-    const { appointmentId } = req.body;
+    const { appointmentId, type } = req.body;
+    const messageType = type === 'notice' ? 'notice' : 'reminder';
     const appointment = await getAppointmentById(appointmentId);
     if (!appointment) return res.status(404).json({ success: false, error: 'Turno no encontrado' });
 
@@ -243,29 +249,61 @@ app.post('/api/whatsapp/reminders/send-single', async (req, res) => {
     const protocol = req.protocol;
     const confirmationUrl = `${protocol}://${host}/portal/turno/${appointment.confirmationToken}`;
 
-    const messageTemplate =
-`RECORDATORIO DE TURNO - CLINICA SALUDCONNECT
+    const clinic = await getClinic();
+    const clinicName = (clinic?.name || 'Clínica SaludConnect').toUpperCase();
+    const locationLines = [
+      clinic?.address ? `Direccion: ${clinic.address}` : '',
+      clinic?.phone ? `Tel: ${clinic.phone}` : ''
+    ].filter(Boolean).join('\n');
 
-Hola ${appointment.patientName}, le recordamos su turno medico:
-Fecha: ${appointment.date}
+    const turnoDetails =
+`Fecha: ${appointment.date}
 Hora: ${appointment.time} hs
 Profesional: ${appointment.doctorName}
-Especialidad: ${appointment.specialty}
-N Fichero: ${appointment.ficheroNumber}
+Especialidad: ${appointment.specialty}${locationLines ? `\n${locationLines}` : ''}
+N Fichero: ${appointment.ficheroNumber}`;
+
+    let messageTemplate;
+    if (messageType === 'notice') {
+      messageTemplate =
+`AVISO DE TURNO - ${clinicName}
+
+Hola ${appointment.patientName}, le informamos que tiene un turno agendado:
+${turnoDetails}
+
+No es necesario confirmar ahora. Le enviaremos un recordatorio cerca de la fecha para que confirme su asistencia.
+Si necesita cancelar o reprogramar, por favor comuniquese con la clinica.`;
+    } else {
+      messageTemplate =
+`RECORDATORIO DE TURNO - ${clinicName}
+
+Hola ${appointment.patientName}, le recordamos su turno:
+${turnoDetails}
 
 Confirme su asistencia en: ${confirmationUrl}
 
 O responda:
 1 para Confirmar Turno
 2 para Cancelar Turno`;
+    }
 
     const waLink = `https://wa.me/${toWhatsappPhone(appointment.patientPhone)}?text=${encodeURIComponent(messageTemplate)}`;
 
-    const updated = await updateAppointment(appointment.id, { whatsappStatus: 'sent' });
-    await addWhatsappLog({ type: 'REMINDER_SENT', appointmentId: appointment.id, patientName: appointment.patientName, phone: appointment.patientPhone, messagePreview: messageTemplate.substring(0, 100) + '...' });
-    broadcastEvent('WHATSAPP_SENT', updated, { title: 'WhatsApp Enviado', message: `Recordatorio enviado a ${appointment.patientName}` });
+    const whatsappStatus = messageType === 'notice' ? 'notice_sent' : 'sent';
+    const updated = await updateAppointment(appointment.id, { whatsappStatus });
+    await addWhatsappLog({
+      type: messageType === 'notice' ? 'NOTICE_SENT' : 'REMINDER_SENT',
+      appointmentId: appointment.id,
+      patientName: appointment.patientName,
+      phone: appointment.patientPhone,
+      messagePreview: messageTemplate.substring(0, 100) + '...'
+    });
+    broadcastEvent('WHATSAPP_SENT', updated, {
+      title: messageType === 'notice' ? 'Aviso de Turno Enviado' : 'Recordatorio de Confirmación Enviado',
+      message: `${messageType === 'notice' ? 'Aviso' : 'Recordatorio'} enviado a ${appointment.patientName}`
+    });
 
-    res.json({ success: true, data: { appointment: updated, confirmationUrl, waLink, messageText: messageTemplate } });
+    res.json({ success: true, data: { appointment: updated, confirmationUrl, waLink, messageText: messageTemplate, type: messageType } });
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 

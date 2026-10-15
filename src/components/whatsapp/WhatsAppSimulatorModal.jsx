@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useClinic } from '../../context/ClinicContext.jsx';
 import { 
   X, 
@@ -22,6 +22,7 @@ export function WhatsAppSimulatorModal() {
     appointments,
     simulatePatientAction,
     sendWhatsappReminder,
+    clinic,
     addToast
   } = useClinic();
 
@@ -36,6 +37,11 @@ export function WhatsAppSimulatorModal() {
   const [simulatedResponses, setSimulatedResponses] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [messageType, setMessageType] = useState('reminder');
+
+  useEffect(() => {
+    if (isOpen) setMessageType(modals.whatsappSimulator.messageType || 'reminder');
+  }, [isOpen, modals.whatsappSimulator.messageType]);
 
   if (!isOpen) return null;
 
@@ -79,18 +85,18 @@ export function WhatsAppSimulatorModal() {
     const waWindow = window.open('', '_blank');
     setIsSending(true);
     try {
-      const result = await sendWhatsappReminder(currentAppointment.id);
+      const result = await sendWhatsappReminder(currentAppointment.id, messageType);
       if (waWindow) waWindow.location.href = result.waLink;
       addToast({
         type: 'success',
-        title: 'Recordatorio Enviado',
+        title: messageType === 'notice' ? 'Aviso de Turno Enviado' : 'Recordatorio Enviado',
         message: `Se abrió WhatsApp con el mensaje para ${currentAppointment.patientName}.`
       });
     } catch (err) {
       if (waWindow) waWindow.close();
       addToast({
         type: 'error',
-        title: 'Error al Enviar Recordatorio',
+        title: 'Error al Enviar',
         message: err.message || 'No se pudo generar el mensaje de WhatsApp.'
       });
     } finally {
@@ -136,14 +142,48 @@ export function WhatsAppSimulatorModal() {
               </select>
             </div>
 
+            {/* Message Type Selector */}
+            <div className="space-y-1.5 bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Tipo de Notificación
+              </label>
+              <div className="flex bg-slate-100 p-0.5 rounded-lg text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setMessageType('notice')}
+                  className={`flex-1 px-2.5 py-1.5 rounded-md transition-all ${
+                    messageType === 'notice' ? 'bg-white text-sky-800 shadow-2xs' : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  Aviso de Turno
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMessageType('reminder')}
+                  className={`flex-1 px-2.5 py-1.5 rounded-md transition-all ${
+                    messageType === 'reminder' ? 'bg-white text-emerald-800 shadow-2xs' : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  Pedir Confirmación
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-snug">
+                {messageType === 'notice'
+                  ? 'Se envía al asignar el turno. El paciente solo queda informado, sin necesidad de confirmar.'
+                  : 'Se envía cerca de la fecha o el mismo día para que el paciente confirme o cancele.'}
+              </p>
+            </div>
+
             {/* How it works banner */}
             <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 space-y-2 text-xs text-emerald-950">
               <div className="font-extrabold flex items-center gap-1.5 text-emerald-900">
                 <Sparkles className="w-4 h-4 text-emerald-600" />
-                <span>¿Cómo funciona el impacto automático?</span>
+                <span>{messageType === 'notice' ? 'Aviso informativo' : '¿Cómo funciona el impacto automático?'}</span>
               </div>
               <p className="text-emerald-800 leading-relaxed">
-                Cuando el paciente presiona <strong>[Aceptar Turno]</strong> o <strong>[Cancelar Turno]</strong> en su teléfono, la base de datos se actualiza y <strong>la agenda del administrador impacta de inmediato en vivo</strong> sin necesidad de refrescar la pantalla.
+                {messageType === 'notice'
+                  ? 'El aviso incluye la fecha, hora, profesional y la dirección del consultorio, pero no pide confirmación. Se recomienda enviarlo al agendar (por ejemplo, para la próxima semana o el próximo mes).'
+                  : <>Cuando el paciente presiona <strong>[Aceptar Turno]</strong> o <strong>[Cancelar Turno]</strong> en su teléfono, la base de datos se actualiza y <strong>la agenda del administrador impacta de inmediato en vivo</strong> sin necesidad de refrescar la pantalla.</>}
               </p>
             </div>
 
@@ -170,7 +210,7 @@ export function WhatsAppSimulatorModal() {
               className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 text-xs font-bold text-emerald-700 bg-white hover:bg-emerald-50 border border-emerald-300 rounded-xl transition-all shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ExternalLink className="w-3.5 h-3.5" />
-              <span>{isSending ? 'Enviando...' : 'Enviar Recordatorio Real (WhatsApp)'}</span>
+              <span>{isSending ? 'Enviando...' : messageType === 'notice' ? 'Enviar Aviso de Turno (WhatsApp)' : 'Enviar Pedido de Confirmación (WhatsApp)'}</span>
             </button>
             {!currentAppointment.patientPhone && (
               <p className="text-[10px] text-rose-500 text-center -mt-2">El paciente no tiene teléfono cargado.</p>
@@ -207,7 +247,7 @@ export function WhatsAppSimulatorModal() {
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1">
-                    <span className="text-xs font-bold truncate">SaludConnect</span>
+                    <span className="text-xs font-bold truncate">{clinic?.name || 'SaludConnect'}</span>
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                   </div>
                   <span className="text-[10px] text-emerald-400 block truncate">Cuenta oficial de empresa</span>
@@ -231,14 +271,17 @@ export function WhatsAppSimulatorModal() {
                 </span>
               </div>
 
-              {/* Clinic Reminder Bubble */}
+              {/* Clinic Message Bubble */}
               <div className="bg-[#202c33] rounded-2xl rounded-tl-xs p-3 text-slate-200 space-y-2 border border-slate-700/50 shadow-md">
-                <div className="font-bold text-emerald-400 text-[11px] flex items-center gap-1">
-                  <span>🏥 RECORDATORIO DE TURNO</span>
+                <div className={`font-bold text-[11px] flex items-center gap-1 ${messageType === 'notice' ? 'text-sky-400' : 'text-emerald-400'}`}>
+                  <span>🏥 {messageType === 'notice' ? 'AVISO DE TURNO' : 'RECORDATORIO DE TURNO'}</span>
                 </div>
                 
                 <p className="text-[11px] text-slate-100 leading-snug">
-                  Hola <strong className="text-white">{currentAppointment.patientName}</strong>, le recordamos su turno médico:
+                  Hola <strong className="text-white">{currentAppointment.patientName}</strong>,{' '}
+                  {messageType === 'notice'
+                    ? 'le informamos que tiene un turno agendado:'
+                    : 'le recordamos su turno médico:'}
                 </p>
 
                 <div className="bg-[#111b21] p-2.5 rounded-xl space-y-1 text-[10px] text-slate-300 border border-slate-800">
@@ -246,47 +289,61 @@ export function WhatsAppSimulatorModal() {
                   <p>⏰ <strong>Hora:</strong> {currentAppointment.time} hs</p>
                   <p>🩺 <strong>Profesional:</strong> {currentAppointment.doctorName}</p>
                   <p>🏢 <strong>Especialidad:</strong> {currentAppointment.specialty}</p>
+                  {clinic?.address && (
+                    <p>📍 <strong>Dirección:</strong> {clinic.address}</p>
+                  )}
+                  {clinic?.phone && (
+                    <p>☎️ <strong>Tel:</strong> {clinic.phone}</p>
+                  )}
                   <p>📋 <strong>Fichero N°:</strong> {currentAppointment.ficheroNumber}</p>
                 </div>
 
-                <p className="text-[10px] text-slate-400">
-                  Por favor, elija una opción para actualizar su estado en la clínica:
-                </p>
+                {messageType === 'notice' ? (
+                  <p className="text-[10px] text-slate-400 leading-snug">
+                    No es necesario confirmar ahora. Le enviaremos un recordatorio cerca de la fecha para que confirme su asistencia.
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-[10px] text-slate-400">
+                      Por favor, elija una opción para actualizar su estado en la clínica:
+                    </p>
 
-                {/* INTERACTIVE ACTION BUTTONS */}
-                <div className="space-y-1.5 pt-1">
-                  <button
-                    onClick={() => handlePatientAction('accept')}
-                    disabled={isProcessing}
-                    className={`w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                      patientResponse === 'confirmed'
-                        ? 'bg-emerald-500 text-white ring-2 ring-emerald-300'
-                        : 'bg-emerald-600/30 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40'
-                    }`}
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>✅ Aceptar Turno</span>
-                  </button>
+                    {/* INTERACTIVE ACTION BUTTONS */}
+                    <div className="space-y-1.5 pt-1">
+                      <button
+                        onClick={() => handlePatientAction('accept')}
+                        disabled={isProcessing}
+                        className={`w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                          patientResponse === 'confirmed'
+                            ? 'bg-emerald-500 text-white ring-2 ring-emerald-300'
+                            : 'bg-emerald-600/30 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40'
+                        }`}
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>✅ Aceptar Turno</span>
+                      </button>
 
-                  <button
-                    onClick={() => handlePatientAction('cancel')}
-                    disabled={isProcessing}
-                    className={`w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                      patientResponse === 'cancelled'
-                        ? 'bg-rose-500 text-white ring-2 ring-rose-300'
-                        : 'bg-rose-600/30 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40'
-                    }`}
-                  >
-                    <XCircle className="w-3.5 h-3.5" />
-                    <span>❌ Cancelar Turno</span>
-                  </button>
-                </div>
+                      <button
+                        onClick={() => handlePatientAction('cancel')}
+                        disabled={isProcessing}
+                        className={`w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                          patientResponse === 'cancelled'
+                            ? 'bg-rose-500 text-white ring-2 ring-rose-300'
+                            : 'bg-rose-600/30 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40'
+                        }`}
+                      >
+                        <XCircle className="w-3.5 h-3.5" />
+                        <span>❌ Cancelar Turno</span>
+                      </button>
+                    </div>
+                  </>
+                )}
 
                 <div className="text-right text-[9px] text-slate-500">08:00 ✓✓</div>
               </div>
 
-              {/* Patient Response Bubble Simulation */}
-              {patientResponse === 'confirmed' && (
+              {/* Patient Response Bubble Simulation (only for confirmation requests) */}
+              {messageType === 'reminder' && patientResponse === 'confirmed' && (
                 <div className="flex justify-end animate-in fade-in slide-in-from-bottom-2 duration-200">
                   <div className="bg-[#005c4b] rounded-2xl rounded-tr-xs p-2.5 text-white max-w-[85%] space-y-1 shadow-md">
                     <p className="text-[11px] font-semibold">
@@ -297,7 +354,7 @@ export function WhatsAppSimulatorModal() {
                 </div>
               )}
 
-              {patientResponse === 'cancelled' && (
+              {messageType === 'reminder' && patientResponse === 'cancelled' && (
                 <div className="flex justify-end animate-in fade-in slide-in-from-bottom-2 duration-200">
                   <div className="bg-rose-900/90 rounded-2xl rounded-tr-xs p-2.5 text-white max-w-[85%] space-y-1 shadow-md">
                     <p className="text-[11px] font-semibold">
@@ -309,7 +366,7 @@ export function WhatsAppSimulatorModal() {
               )}
 
               {/* Clinic Instant Auto-Ack Bubble */}
-              {patientResponse && (
+              {messageType === 'reminder' && patientResponse && (
                 <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <div className="bg-[#202c33] rounded-2xl rounded-tl-xs p-2.5 text-slate-200 max-w-[85%] space-y-1 shadow-md border border-slate-700">
                     <p className="text-[10px]">

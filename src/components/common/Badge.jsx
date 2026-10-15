@@ -75,6 +75,13 @@ export function WhatsappStatusBadge({ status }) {
       </span>
     );
   }
+  if (status === 'notice_sent') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-sky-800 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
+        <Clock className="w-3 h-3 text-sky-500" /> Aviso enviado
+      </span>
+    );
+  }
   if (status === 'sent') {
     return (
       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-700 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">

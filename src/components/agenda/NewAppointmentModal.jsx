@@ -56,7 +56,7 @@ export function NewAppointmentModal() {
   const [durationMinutes, setDurationMinutes] = useState(15);
   const [isOverturn, setIsOverturn] = useState(false);
   const [notes, setNotes] = useState('');
-  const [sendWhatsappNow, setSendWhatsappNow] = useState(true);
+  const [sendNoticeNow, setSendNoticeNow] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const timeSlots = generateTimeSlots(8, 20);
@@ -77,7 +77,8 @@ export function NewAppointmentModal() {
   const selectedDoctor = doctors.find(d => d.id === doctorId) || doctors[0];
   const selectedPatient = patients.find(p => p.id === selectedPatientId);
 
-  const filteredExistingPatients = patientSearch.trim() === '' ? patients.slice(0, 4) : patients.filter(p => {
+  const PATIENT_RESULTS_LIMIT = 50;
+  const filteredExistingPatients = patientSearch.trim() === '' ? patients.slice(0, 8) : patients.filter(p => {
     const q = patientSearch.toLowerCase();
     return (
       (p.ficheroNumber && p.ficheroNumber.toLowerCase().includes(q)) ||
@@ -86,7 +87,7 @@ export function NewAppointmentModal() {
       (p.dni && p.dni.includes(q)) ||
       (p.phone && p.phone.includes(q))
     );
-  }).slice(0, 5);
+  }).slice(0, PATIENT_RESULTS_LIMIT);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -135,7 +136,7 @@ export function NewAppointmentModal() {
         isOverturn: Boolean(isOverturn),
         notes,
         status: 'pending',
-        whatsappStatus: sendWhatsappNow ? 'sent' : 'not_sent'
+        whatsappStatus: 'not_sent'
       });
 
       addToast({
@@ -147,8 +148,8 @@ export function NewAppointmentModal() {
 
       closeModal('newAppointment');
 
-      if (sendWhatsappNow) {
-        openModal('whatsappSimulator', { appointment: newApt });
+      if (sendNoticeNow) {
+        openModal('whatsappSimulator', { appointment: newApt, messageType: 'notice' });
       }
 
     } catch (err) {
@@ -230,7 +231,20 @@ export function NewAppointmentModal() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    {patientSearch.trim() === ''
+                      ? `Fichero con ${patients.length} pacientes — escribí para buscar`
+                      : `${filteredExistingPatients.length === PATIENT_RESULTS_LIMIT ? `${PATIENT_RESULTS_LIMIT}+` : filteredExistingPatients.length} resultado(s)`}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto">
+                  {filteredExistingPatients.length === 0 && (
+                    <p className="text-xs text-slate-500 italic px-1 col-span-full">
+                      No se encontraron pacientes con ese criterio.
+                    </p>
+                  )}
                   {filteredExistingPatients.map(p => {
                     const isSel = selectedPatientId === p.id;
                     return (
@@ -245,7 +259,9 @@ export function NewAppointmentModal() {
                       >
                         <div className="min-w-0">
                           <span className="text-xs truncate block">{p.firstName} {p.lastName}</span>
-                          <span className="text-[10px] text-brand-700 font-extrabold">{p.ficheroNumber} • DNI: {p.dni}</span>
+                          <span className="text-[10px] text-brand-700 font-extrabold">
+                            {p.ficheroNumber}{p.dni ? ` • DNI: ${p.dni}` : ''}
+                          </span>
                         </div>
                         {isSel && <CheckCircle2 className="w-4 h-4 text-brand-600 shrink-0" />}
                       </div>
@@ -402,18 +418,21 @@ export function NewAppointmentModal() {
           </div>
 
           {/* PASO 4: WHATSAPP */}
-          <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+          <div className="p-3.5 rounded-2xl bg-sky-50/70 border border-sky-200">
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
-                checked={sendWhatsappNow}
-                onChange={(e) => setSendWhatsappNow(e.target.checked)}
-                className="w-4 h-4 text-emerald-600 rounded"
+                checked={sendNoticeNow}
+                onChange={(e) => setSendNoticeNow(e.target.checked)}
+                className="w-4 h-4 text-sky-600 rounded"
               />
               <div>
-                <span className="text-xs font-black text-emerald-950 flex items-center gap-1.5">
-                  <Send className="w-4 h-4 text-emerald-600" />
-                  Enviar recordatorio interactivo de WhatsApp con botones [Aceptar / Cancelar]
+                <span className="text-xs font-black text-sky-950 flex items-center gap-1.5">
+                  <Send className="w-4 h-4 text-sky-600" />
+                  Enviar aviso de turno por WhatsApp
+                </span>
+                <span className="text-[11px] text-slate-500 block mt-0.5">
+                  Informa al paciente la fecha, hora y dirección. No le pide confirmar; el recordatorio de confirmación se envía cerca de la fecha.
                 </span>
               </div>
             </label>

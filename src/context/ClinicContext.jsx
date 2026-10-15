@@ -57,7 +57,7 @@ export function ClinicProvider({ children }) {
     newPatient: { isOpen: false, patient: null },
     patientDetail: { isOpen: false, patient: null },
     newDoctor: { isOpen: false, doctor: null },
-    whatsappSimulator: { isOpen: false, appointment: null },
+    whatsappSimulator: { isOpen: false, appointment: null, messageType: 'reminder' },
     whatsappBatch: { isOpen: false, date: null },
     medicalRecordEditor: { isOpen: false, patient: null, doctor: null, record: null },
     prescriptionPrint: { isOpen: false, record: null, type: 'receta' },
@@ -373,6 +373,17 @@ export function ClinicProvider({ children }) {
     });
   };
 
+  const updateClinic = async (clinicData) => {
+    const updated = await api.updateClinic(clinicData);
+    setClinic(updated);
+    addToast({
+      type: 'success',
+      title: 'Configuración Guardada',
+      message: 'Los datos de la clínica se actualizaron correctamente.'
+    });
+    return updated;
+  };
+
   const createPatient = async (patientData) => {
     const newPat = await api.createPatient(patientData);
     await loadPatients();
@@ -460,8 +471,8 @@ export function ClinicProvider({ children }) {
     });
   };
 
-  const sendWhatsappReminder = async (appointmentId) => {
-    const result = await api.sendWhatsappReminderSingle(appointmentId);
+  const sendWhatsappReminder = async (appointmentId, type = 'reminder') => {
+    const result = await api.sendWhatsappReminderSingle(appointmentId, type);
     await loadAppointments();
     return result;
   };
@@ -557,6 +568,7 @@ export function ClinicProvider({ children }) {
       loadPatients,
       loadAppointments,
       loadSubscription,
+      updateClinic,
       registerClinicAccount,
       createDoctor,
       updateDoctor,

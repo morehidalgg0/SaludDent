@@ -47,6 +47,9 @@ import { TimeBlockModal } from './components/modals/TimeBlockModal.jsx';
 // Waiting Room
 import { WaitingRoomView } from './components/waiting_room/WaitingRoomView.jsx';
 
+// Settings / Clinic profile
+import { SettingsView } from './components/settings/SettingsView.jsx';
+
 // SaaS Subscription & Billing
 import { SubscriptionView } from './components/subscription/SubscriptionView.jsx';
 import { PlanCheckoutModal } from './components/subscription/PlanCheckoutModal.jsx';
@@ -135,6 +138,13 @@ function MainAppContent() {
         {activeSection === 'espera' && (
           <div className="animate-in fade-in duration-150">
             <WaitingRoomView />
+          </div>
+        )}
+
+        {/* SECTION: CONFIGURACIÓN (DATOS DEL ODONTÓLOGO Y CLÍNICA) */}
+        {activeSection === 'configuracion' && (
+          <div className="animate-in fade-in duration-150">
+            <SettingsView />
           </div>
         )}
 

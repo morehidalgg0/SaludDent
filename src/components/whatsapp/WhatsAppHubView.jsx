@@ -35,7 +35,7 @@ export function WhatsAppHubView() {
     const waWindow = apt.patientPhone ? window.open('', '_blank') : null;
     setSendingId(apt.id);
     try {
-      const result = await sendWhatsappReminder(apt.id);
+      const result = await sendWhatsappReminder(apt.id, 'reminder');
       if (waWindow) waWindow.location.href = result.waLink;
       addToast({ type: 'success', title: 'Recordatorio Enviado', message: `Se abrió WhatsApp para ${apt.patientName}.` });
     } catch (err) {
@@ -51,7 +51,8 @@ export function WhatsAppHubView() {
     ? dayAppointments 
     : dayAppointments.filter(a => a.whatsappStatus === statusFilter);
 
-  const sentCount = dayAppointments.filter(a => a.whatsappStatus !== 'not_sent').length;
+  const sentCount = dayAppointments.filter(a => ['sent', 'confirmed_by_patient', 'cancelled_by_patient'].includes(a.whatsappStatus)).length;
+  const noticeCount = dayAppointments.filter(a => a.whatsappStatus === 'notice_sent').length;
   const confirmedCount = dayAppointments.filter(a => a.whatsappStatus === 'confirmed_by_patient').length;
   const cancelledCount = dayAppointments.filter(a => a.whatsappStatus === 'cancelled_by_patient').length;
 
@@ -98,10 +99,14 @@ export function WhatsAppHubView() {
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-4 border-t border-emerald-800/60">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mt-6 pt-4 border-t border-emerald-800/60">
           <div className="bg-emerald-950/60 rounded-xl p-3 border border-emerald-800/40">
             <span className="text-[10px] font-semibold text-emerald-300/70 uppercase">Turnos del Día</span>
             <p className="text-xl font-black text-white">{dayAppointments.length}</p>
+          </div>
+          <div className="bg-emerald-950/60 rounded-xl p-3 border border-emerald-800/40">
+            <span className="text-[10px] font-semibold text-sky-300/70 uppercase">Avisos Enviados</span>
+            <p className="text-xl font-black text-sky-400">{noticeCount}</p>
           </div>
           <div className="bg-emerald-950/60 rounded-xl p-3 border border-emerald-800/40">
             <span className="text-[10px] font-semibold text-emerald-300/70 uppercase">Recordatorios Enviados</span>
@@ -142,6 +147,7 @@ export function WhatsAppHubView() {
           >
             <option value="all">Todos los estados de WhatsApp</option>
             <option value="not_sent">Sin enviar</option>
+            <option value="notice_sent">Aviso Enviado</option>
             <option value="sent">Recordatorio Enviado</option>
             <option value="confirmed_by_patient">Confirmado por Paciente</option>
             <option value="cancelled_by_patient">Cancelado por Paciente</option>

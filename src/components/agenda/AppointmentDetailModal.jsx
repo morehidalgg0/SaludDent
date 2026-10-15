@@ -254,17 +254,31 @@ export function AppointmentDetailModal() {
               </>
             )}
 
-            {/* WhatsApp Simulator & Action Button */}
-            <button
-              onClick={() => {
-                closeModal('appointmentDetail');
-                openModal('whatsappSimulator', { appointment });
-              }}
-              className="w-full py-2 px-4 rounded-xl font-semibold text-xs text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 flex items-center justify-center gap-2 transition-colors"
-            >
-              <MessageSquare className="w-4 h-4 text-emerald-700" />
-              <span>Simulador / Mensaje de WhatsApp</span>
-            </button>
+            {/* WhatsApp Actions: informational notice vs. confirmation request */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  closeModal('appointmentDetail');
+                  openModal('whatsappSimulator', { appointment, messageType: 'notice' });
+                }}
+                className="py-2 px-3 rounded-xl font-semibold text-xs text-sky-900 bg-sky-50 hover:bg-sky-100 border border-sky-200 flex items-center justify-center gap-2 transition-colors"
+                title="Aviso informativo: informa el turno sin pedir confirmación"
+              >
+                <MessageSquare className="w-4 h-4 text-sky-700" />
+                <span>Enviar Aviso</span>
+              </button>
+              <button
+                onClick={() => {
+                  closeModal('appointmentDetail');
+                  openModal('whatsappSimulator', { appointment, messageType: 'reminder' });
+                }}
+                className="py-2 px-3 rounded-xl font-semibold text-xs text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 flex items-center justify-center gap-2 transition-colors"
+                title="Recordatorio: pide al paciente que confirme o cancele"
+              >
+                <Send className="w-4 h-4 text-emerald-700" />
+                <span>Pedir Confirmación</span>
+              </button>
+            </div>
 
             {/* Direct Medical Record Launcher */}
             <button

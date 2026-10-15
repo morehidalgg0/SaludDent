@@ -5,7 +5,8 @@ import {
   Folder, 
   FileText, 
   MessageSquare, 
-  Users
+  Users,
+  Settings
 } from 'lucide-react';
 
 export function Sidebar() {
@@ -40,6 +41,12 @@ export function Sidebar() {
       id: 'espera',
       label: 'Sala de Espera',
       icon: Users,
+      count: null
+    },
+    {
+      id: 'configuracion',
+      label: 'Configuración',
+      icon: Settings,
       count: null
     }
   ];

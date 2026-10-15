@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "clinic" ADD COLUMN "dentistName" TEXT NOT NULL DEFAULT '',
+ADD COLUMN "license" TEXT NOT NULL DEFAULT '',
+ADD COLUMN "ttc" TEXT NOT NULL DEFAULT '';
