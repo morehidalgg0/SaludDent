@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useClinic } from '../../context/ClinicContext.jsx';
 import { api } from '../../services/api.js';
+import { buildImageAttachment } from '../../utils/imageUtils.js';
 import { SpecialtyDynamicModule } from './specialties/SpecialtyDynamicModule.jsx';
 import { 
   X, 
@@ -16,7 +17,9 @@ import {
   HeartPulse, 
   Thermometer, 
   Droplet,
-  Sparkles
+  Sparkles,
+  ImagePlus,
+  Images
 } from 'lucide-react';
 
 export function MedicalRecordEditorModal() {
@@ -52,6 +55,12 @@ export function MedicalRecordEditorModal() {
     { medication: '', dosage: '', duration: '' }
   ]);
 
+  // Clinical images / study attachments
+  const [attachments, setAttachments] = useState([]);
+  const [isProcessingImages, setIsProcessingImages] = useState(false);
+  const [lightbox, setLightbox] = useState(null);
+  const [isDraggingImages, setIsDraggingImages] = useState(false);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aiBusy, setAiBusy] = useState(null);
 
@@ -66,6 +75,7 @@ export function MedicalRecordEditorModal() {
       setVitalSigns(initRecord.vitalSigns || {});
       setSpecialtyData(initRecord.specialtyData || {});
       setPrescriptions(initRecord.prescriptions?.length ? initRecord.prescriptions : [{ medication: '', dosage: '', duration: '' }]);
+      setAttachments(Array.isArray(initRecord.attachments) ? initRecord.attachments : []);
     } else {
       if (initPatient?.id) setPatientId(initPatient.id);
       if (initDoctor?.id) setDoctorId(initDoctor.id);
@@ -76,6 +86,7 @@ export function MedicalRecordEditorModal() {
       setVitalSigns({ bloodPressure: '120/80', heartRate: '72', temperature: '36.5', oxygenSat: '98' });
       setSpecialtyData({});
       setPrescriptions([{ medication: '', dosage: '', duration: '' }]);
+      setAttachments([]);
     }
   }, [initRecord, initPatient, initDoctor, isOpen]);
 
@@ -114,6 +125,28 @@ export function MedicalRecordEditorModal() {
     setPrescriptions(prescriptions.filter((_, i) => i !== idx));
   };
 
+  const handleAddImages = async (fileList) => {
+    const files = Array.from(fileList || []).filter(f => f.type.startsWith('image/'));
+    if (!files.length) return;
+
+    setIsProcessingImages(true);
+    try {
+      const built = [];
+      for (const file of files) {
+        built.push(await buildImageAttachment(file));
+      }
+      setAttachments(prev => [...prev, ...built]);
+    } catch (err) {
+      addToast({ type: 'error', title: 'Imágenes', message: err.message || 'No se pudieron agregar las imágenes.' });
+    } finally {
+      setIsProcessingImages(false);
+    }
+  };
+
+  const removeAttachment = (id) => {
+    setAttachments(prev => prev.filter(a => a.id !== id));
+  };
+
   const openDentalPrint = (type, budget = null) => {
     openModal('dentalPrint', {
       type,
@@ -146,7 +179,8 @@ export function MedicalRecordEditorModal() {
         diagnosis,
         treatmentPlan,
         specialtyData,
-        prescriptions: prescriptions.filter(p => p.medication.trim() !== '')
+        prescriptions: prescriptions.filter(p => p.medication.trim() !== ''),
+        attachments
       };
 
       if (initRecord?.id) {
@@ -459,6 +493,84 @@ export function MedicalRecordEditorModal() {
             </div>
           </div>
 
+          {/* Clinical Images / Study Attachments */}
+          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <Images className="w-3.5 h-3.5 text-slate-500" />
+                Imágenes & Estudios Adjuntos
+              </span>
+              <label className={`px-2.5 py-1 text-xs font-bold text-brand-700 bg-white hover:bg-brand-50 border border-brand-200 rounded-lg flex items-center gap-1 transition-colors cursor-pointer ${isProcessingImages ? 'opacity-50 pointer-events-none' : ''}`}>
+                <ImagePlus className="w-3.5 h-3.5" />
+                <span>{isProcessingImages ? 'Procesando...' : '+ Agregar Imágenes'}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  disabled={isProcessingImages}
+                  onChange={(e) => { handleAddImages(e.target.files); e.target.value = ''; }}
+                />
+              </label>
+            </div>
+
+            <div
+              onDragOver={(e) => { e.preventDefault(); setIsDraggingImages(true); }}
+              onDragLeave={() => setIsDraggingImages(false)}
+              onDrop={(e) => { e.preventDefault(); setIsDraggingImages(false); handleAddImages(e.dataTransfer.files); }}
+              className={`rounded-xl border-2 border-dashed transition-colors ${isDraggingImages ? 'border-brand-400 bg-brand-50/50' : 'border-slate-200'}`}
+            >
+              {attachments.length === 0 ? (
+                <label className="block p-4 text-center text-slate-400 text-xs cursor-pointer hover:text-slate-500">
+                  Arrastrá imágenes aquí o hacé clic para seleccionar (radiografías, fotos clínicas, estudios).
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    disabled={isProcessingImages}
+                    onChange={(e) => { handleAddImages(e.target.files); e.target.value = ''; }}
+                  />
+                </label>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 p-2">
+                  {attachments.map(img => (
+                    <div key={img.id} className="relative group rounded-lg overflow-hidden border border-slate-200 bg-white">
+                      <img
+                        src={img.dataUrl}
+                        alt={img.name}
+                        onClick={() => setLightbox(img)}
+                        className="w-full h-24 object-cover cursor-zoom-in"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(img.id)}
+                        title="Quitar imagen"
+                        className="absolute top-1 right-1 p-1 rounded-md bg-slate-900/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <label className="flex items-center justify-center h-24 rounded-lg border border-dashed border-slate-200 text-slate-400 hover:text-brand-600 hover:border-brand-300 cursor-pointer transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      disabled={isProcessingImages}
+                      onChange={(e) => { handleAddImages(e.target.files); e.target.value = ''; }}
+                    />
+                    <Plus className="w-5 h-5" />
+                  </label>
+                </div>
+              )}
+            </div>
+            <p className="text-[10px] text-slate-400">
+              Las imágenes se optimizan automáticamente y quedan guardadas en la historia clínica del paciente.
+            </p>
+          </div>
+
           {/* Footer Buttons */}
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
             <button
@@ -481,6 +593,28 @@ export function MedicalRecordEditorModal() {
         </form>
 
       </div>
+
+      {/* Image Lightbox */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/85"
+          onClick={() => setLightbox(null)}
+        >
+          <img
+            src={lightbox.dataUrl}
+            alt={lightbox.name}
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-full max-h-[88vh] rounded-xl shadow-2xl"
+          />
+          <button
+            type="button"
+            onClick={() => setLightbox(null)}
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

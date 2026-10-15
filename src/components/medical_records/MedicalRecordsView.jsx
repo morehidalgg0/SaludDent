@@ -8,7 +8,9 @@ import {
   Filter, 
   User, 
   Printer, 
-  Edit
+  Edit,
+  X,
+  Paperclip
 } from 'lucide-react';
 import { formatHumanDate } from '../../utils/dateUtils.js';
 
@@ -19,6 +21,7 @@ export function MedicalRecordsView() {
   const [selectedSpecialty, setSelectedSpecialty] = useState('all');
   const [records, setRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [lightbox, setLightbox] = useState(null);
 
   const loadRecords = async () => {
     setIsLoading(true);
@@ -205,11 +208,59 @@ export function MedicalRecordsView() {
                     ))}
                   </div>
                 )}
+
+                {record.attachments?.length > 0 && (
+                  <div className="pt-2 border-t border-slate-100">
+                    <span className="text-[11px] font-semibold text-slate-600 flex items-center gap-1 mb-1.5">
+                      <Paperclip className="w-3 h-3 text-slate-400" />
+                      Imágenes adjuntas ({record.attachments.length})
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {record.attachments.map((img, idx) => (
+                        <button
+                          key={img.id || idx}
+                          type="button"
+                          onClick={() => setLightbox(img)}
+                          className="w-16 h-16 rounded-lg overflow-hidden border border-slate-200 hover:border-brand-300 hover:shadow-sm transition-all"
+                          title={img.name || `Imagen ${idx + 1}`}
+                        >
+                          <img
+                            src={img.dataUrl}
+                            alt={img.name || `Adjunto ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })
         )}
       </div>
+
+      {/* Image Lightbox */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/85"
+          onClick={() => setLightbox(null)}
+        >
+          <img
+            src={lightbox.dataUrl}
+            alt={lightbox.name}
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-full max-h-[88vh] rounded-xl shadow-2xl"
+          />
+          <button
+            type="button"
+            onClick={() => setLightbox(null)}
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
 
     </div>
   );

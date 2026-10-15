@@ -34,7 +34,7 @@ function toWhatsappPhone(rawPhone) {
 const app = express();
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '30mb' }));
 
 // --- REAL-TIME SSE ---
 const sseClients = new Set();
