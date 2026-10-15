@@ -299,7 +299,6 @@ export function WhatsAppSimulatorModal() {
                   {clinic?.phone && (
                     <p>☎️ <strong>Tel:</strong> {clinic.phone}</p>
                   )}
-                  <p>📋 <strong>Fichero N°:</strong> {currentAppointment.ficheroNumber}</p>
                 </div>
 
                 {messageType === 'notice' ? (

@@ -68,8 +68,7 @@ Hola [Paciente], le recordamos su turno medico:
 Fecha: [fecha]
 Hora: [hora] hs
 Profesional: [profesional]
-Especialidad: [especialidad]${form.address ? `\nDireccion: ${form.address}` : ''}${form.phone ? `\nTel: ${form.phone}` : ''}
-N Fichero: [n°]`;
+Especialidad: [especialidad]${form.address ? `\nDireccion: ${form.address}` : ''}${form.phone ? `\nTel: ${form.phone}` : ''}`;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">

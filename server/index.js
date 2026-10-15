@@ -260,8 +260,7 @@ app.post('/api/whatsapp/reminders/send-single', async (req, res) => {
 `Fecha: ${appointment.date}
 Hora: ${appointment.time} hs
 Profesional: ${appointment.doctorName}
-Especialidad: ${appointment.specialty}${locationLines ? `\n${locationLines}` : ''}
-N Fichero: ${appointment.ficheroNumber}`;
+Especialidad: ${appointment.specialty}${locationLines ? `\n${locationLines}` : ''}`;
 
     let messageTemplate;
     if (messageType === 'notice') {
